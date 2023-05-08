@@ -5,6 +5,6 @@ The best thing is it ask for the user's confirmation before it installation.
 
 ## Installation Instructions: 
 
-`wget https://raw.githubusercontent.com/whmcs-smarters/lamp/main/lamp.sh && chmod +x lamp.sh
+`wget https://raw.githubusercontent.com/whmcs-smarters/lamp/main/lamp.sh && chmod +x lamp.sh`
 
 `./lamp.sh `
