@@ -31,7 +31,7 @@ sudo apt-get install apache2 -y
 sudo a2enmod rewrite
 # Restart Apache
 sudo systemctl restart apache2
-echo -e "\e[32mApache Installed Successfully\e[0m"
+echo -e "\e[32mApache Installed and Restart Successfully\e[0m"
 echo "Apache Version: $(apache2 -v | grep -i apache | awk '{print $1 $3}')"
 fi
 # Install MySQL with defined password
@@ -56,6 +56,7 @@ sudo debconf-set-selections <<< "mysql-server mysql-server/root_password_again p
 sudo apt-get install mysql-server -y
 echo -e "MySQL Installed with Password: \e[1m$MYSQL_ROOT_PASSWORD\e[0m"
 echo "MySQL Version: $(mysql -V | awk '{print $1,$2,$3}')"
+echo -e "\e[32mMySQL Installed Successfully\e[0m"
 # Create a database for the domain name provided by the user
 echo "Creating Database User"
 until [[ $createuser =~ (y|n) ]]; do
