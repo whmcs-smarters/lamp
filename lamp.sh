@@ -114,7 +114,8 @@ sudo apt-get install software-properties-common -y
 sudo add-apt-repository ppa:ondrej/php -y
 sudo apt-get update -y
 sudo apt-get install php8.1 -y
-sudo apt-get install php8.1-{bcmath,bz2,intl,gd,mbstring,mysql,zip} -y
+sudo apt install unzip
+sudo apt-get install php8.1-{bcmath,bz2,intl,gd,mbstring,mysql,zip,curl} -y
 sudo apt-get install php libapache2-mod-php php-mysql -y
 # Restart Apache
 sudo systemctl restart apache2
@@ -138,7 +139,7 @@ sudo mkdir -p /var/www/vhosts/${domain_name}/public/
 echo "Creating Virtual Host File for $domain_name"
 cat >> /etc/apache2/sites-available/${domain_name}.conf <<EOF
 <VirtualHost *:80>
-<Directory /var/www/vhosts/${domain_namete}/public>
+<Directory /var/www/vhosts/${domain_name}/public>
         Options Indexes FollowSymLinks
         AllowOverride All
         Require all granted
