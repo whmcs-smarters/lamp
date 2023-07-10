@@ -2,10 +2,9 @@
 # get the domain name from the user as argument
 while getopts ":d:" o
 do
-    case "${o}" in
-    d) domain_name=${OPTARG}
-    ;;
-    esac
+case "${o}" in
+d) domain_name=${OPTARG};
+esac
 done
 # check if domain name is provided or not
 if [ -z "$domain_name" ]
@@ -23,10 +22,10 @@ fi
 if [[ $domain_name =~ ^[a-zA-Z0-9]+([-.]{1}[a-zA-Z0-9]+)*\.[a-zA-Z]{2,}$ ]]
 then
     echo -e "\e[32mDomain Name: $domain_name\e[0m"
-    isSubdomain = false;
+    isSubdomain=false;
 else
     echo -e "\e[32mSub Domain Name: $domain_name\e[0m"
-    isSubdomain = true;
+    isSubdomain=true;
 fi
 # This script will install LAMP in Ubuntu 22.04
 echo -e "\e[32mWelcome to LAMP Installation & Configuration Script\e[0m"
@@ -63,7 +62,6 @@ exit 1
 fi
 # Enable Apache Mods
 echo -e "\e[32mEnabling Apache Mods\e[0m"
-
 sudo a2enmod rewrite
 # Restart Apache
 echo -e "\e[32mRestarting Apache\e[0m"
@@ -95,20 +93,12 @@ else
 echo -e "\e[31mMySQL is not installed\e[0m"
 exit 1
 fi
-# Create a database for the domain name provided by the user
-echo "Creating Database User"
-# Generate Random Password
-MYSQL_ROOT_PASSWORD="$(openssl rand -base64 12)"
-sudo debconf-set-selections <<< "mysql-server mysql-server/root_password password $MYSQL_ROOT_PASSWORD"
-sudo debconf-set-selections <<< "mysql-server mysql-server/root_password_again password $MYSQL_ROOT_PASSWORD"
-sudo apt-get install mysql-server -y
-echo -e "MySQL Installed with Password: \e[1m$MYSQL_ROOT_PASSWORD\e[0m"
 echo "MySQL Version: $(mysql -V | awk '{print $1,$2,$3}')"
 echo -e "\e[32mMySQL Installed Successfully\e[0m"
 # Create a database for the domain name provided by the user
 echo "Creating Database User"
 echo -e "\e[32mCreating Database and DB User\e[0m"
-$database_name = "smarterspanel_db";
+database_name="smarterspanel_db";
 sudo mysql -u root -p$MYSQL_ROOT_PASSWORD -e "CREATE DATABASE $database_name;"
 echo -e "\e[32mDatabase Created Successfully\e[0m"
 # show databases
@@ -118,6 +108,9 @@ echo "Database Configuration Script Completed"
 # Create a database user for the domain name provided by the user
 echo "Creating Database User"
 # Create a database user
+# generated random database user
+database_user="smarterspanel_user";
+database_user_password="$(openssl rand -base64 12)"
 mysql -u root -p$MYSQL_ROOT_PASSWORD -e "CREATE USER '$database_user'@'localhost' IDENTIFIED BY '$database_user_password';"
 # Grant privileges to the database user
 mysql -u root -p$MYSQL_ROOT_PASSWORD -e "GRANT ALL PRIVILEGES ON $database_name.* TO '$database_user'@'localhost';"
@@ -148,7 +141,6 @@ sudo systemctl restart apache2
 echo -e "\e[32mPHP Installed Successfully\e[0m"
 echo "PHP Version: $(php -v | grep -i cli | awk '{print $1 $2}')"
 fi
-
 # Create Virtual Host for the domain name provided by the user
 # create a directory for the domain name
 # check if directory already exists
@@ -172,7 +164,7 @@ rm -rf /etc/apache2/sites-available/${domain_name}.conf
 echo -e "\e[32mVirtual Host File deleted\e[0m"
 fi
 echo "Creating Virtual Host File for $domain_name"
-if ($isSubdomain){
+if [ "$isSubdomain" = true ] ; then
 cat >> /etc/apache2/sites-available/${domain_name}.conf <<EOF
 <VirtualHost *:80>
 <Directory /var/www/vhosts/${domain_name}/public>
@@ -187,8 +179,7 @@ cat >> /etc/apache2/sites-available/${domain_name}.conf <<EOF
     CustomLog \${APACHE_LOG_DIR}/access.log combined
 </VirtualHost>
 EOF
-}else
-{
+else
 cat >> /etc/apache2/sites-available/${domain_name}.conf <<EOF
 <VirtualHost *:80>
 <Directory /var/www/vhosts/${domain_name}/public>
@@ -204,7 +195,6 @@ cat >> /etc/apache2/sites-available/${domain_name}.conf <<EOF
     CustomLog \${APACHE_LOG_DIR}/access.log combined
 </VirtualHost>
 EOF
-}
 fi
 # Enable the virtual host
 sudo a2ensite $domain_name.conf
@@ -219,8 +209,8 @@ sudo echo "<?php phpinfo(); ?>" > /var/www/vhosts/${domain_name}/public/info.php
 ########## Install Let's Encrypt SSL Certificate for the domain name provided by the user ##########
 echo "Installing SSL Certificate"
 # Update the repository
-echo "Updating the repository"
-sudo apt-get update -y
+#echo "Updating the repository"
+#sudo apt-get update -y
 echo "Installing Certbot"
 sudo apt-get install certbot python3-certbot-apache -y
 echo -e "\e[32mCertbot Installed Successfully\e[0m"
@@ -235,8 +225,7 @@ sudo certbot delete --cert-name $domain_name
 echo -e "\e[32mExisting SSL Certificate Deleted Successfully\e[0m"
 fi
 # Install SSL Certificate with www and non-www domain name and without email address
-if($isSubdomain)
-then
+if [ "$isSubdomain" = true ] ; then
 sudo certbot --apache -d $domain_name --register-unsafely-without-email --agree-tos -n
 else
 sudo certbot --apache -d $domain_name -d www.$domain_name --register-unsafely-without-email --agree-tos -n 
