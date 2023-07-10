@@ -92,17 +92,8 @@ sudo apt-get install mysql-server -y
 echo -e "MySQL Installed with Password: \e[1m$MYSQL_ROOT_PASSWORD\e[0m"
 echo "MySQL Version: $(mysql -V | awk '{print $1,$2,$3}')"
 echo -e "\e[32mMySQL Installed Successfully\e[0m"
-fi
-# check if mysql is already installed
-mysql=$(dpkg-query -W -f='${Status}' mysql-server 2>/dev/null | grep -c "ok installed")
-if [ $mysql -eq 1 ]; then
-echo -e "\e[32mMySQL is installed\e[0m"
-else
-echo -e "\e[31mMySQL is not installed\e[0m"
-exit 1
-fi
 echo "MySQL Version: $(mysql -V | awk '{print $1,$2,$3}')"
-echo -e "\e[32mMySQL Installed Successfully\e[0m"
+fi
 # Create a database for the domain name provided by the user
 echo -e "\e[32mCreating Database and DB User\e[0m"
 database_name="smarterspanel_db";
@@ -127,9 +118,6 @@ echo "*************** Database Details ******************"
 echo "Database User: $database_user"
 echo "Database User Password: $database_user_password"
 echo "Database Name: $database_name"
-
-# Install PHP 8.1 and its modules ubuntu 22.04
-echo -e "\e[32mInstalling PHP 8.1 and its modules\e[0m"
 # check if PHP is already installed
 php=$(dpkg-query -W -f='${Status}' php 2>/dev/null | grep -c "ok installed")
 if [ $php -eq 1 ]; then
@@ -213,6 +201,8 @@ sudo systemctl restart apache2
 echo "Virtual Host Created Successfully for $domain_name"
 echo "Virtual Host Configuration Script Completed"
 # create a php file to test PHP
+echo "Creating index.php file to welcome message"
+sudo echo "<?php echo 'Welcome to $domain_name'; ?>" > /var/www/vhosts/${domain_name}/public/index.php
 sudo echo "<?php phpinfo(); ?>" > /var/www/vhosts/${domain_name}/public/info.php
 ########## Install Let's Encrypt SSL Certificate for the domain name provided by the user ##########
 echo "Installing SSL Certificate"
