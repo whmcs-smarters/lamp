@@ -18,15 +18,23 @@ then
     echo -e "\e[31mPlease provide a valid domain name\e[0m"
     exit 1
 fi
-# check if it's domain or sub domain
-if [[ $domain_name =~ ^[a-zA-Z0-9]+([-.]{1}[a-zA-Z0-9]+)*\.[a-zA-Z]{2,}$ ]]
-then
-    echo -e "\e[32mDomain Name: $domain_name\e[0m"
-    isSubdomain=false;
+# check if domain or subdomain 
+input=$domain_name
+# Split the input into an array using dot as the delimiter
+IFS='.' read -ra parts <<< "$input"
+# Check the number of parts in the input
+num_parts=${#parts[@]}
+if [[ $num_parts -gt 2 ]]; then
+    echo "The input '$input' is a subdomain."
+    isSubdomain=true
+elif [[ $num_parts -eq 2 ]]; then
+    echo "The input '$input' is a domain."
+    isSubdomain=false
 else
-    echo -e "\e[32mSub Domain Name: $domain_name\e[0m"
-    isSubdomain=true;
+    echo "Invalid input. Please provide a valid domain or subdomain."
+    exit 1
 fi
+
 # This script will install LAMP in Ubuntu 22.04
 echo -e "\e[32mWelcome to LAMP Installation & Configuration Script\e[0m"
 # Check if the script is running on Ubuntu 22.04 or not
@@ -96,7 +104,6 @@ fi
 echo "MySQL Version: $(mysql -V | awk '{print $1,$2,$3}')"
 echo -e "\e[32mMySQL Installed Successfully\e[0m"
 # Create a database for the domain name provided by the user
-echo "Creating Database User"
 echo -e "\e[32mCreating Database and DB User\e[0m"
 database_name="smarterspanel_db";
 sudo mysql -u root -p$MYSQL_ROOT_PASSWORD -e "CREATE DATABASE $database_name;"
@@ -107,8 +114,7 @@ mysql -u root -p$MYSQL_ROOT_PASSWORD -e "show databases;"
 echo "Database Configuration Script Completed"
 # Create a database user for the domain name provided by the user
 echo "Creating Database User"
-# Create a database user
-# generated random database user
+# Create a database user for the domain name provided by the user
 database_user="smarterspanel_user";
 database_user_password="$(openssl rand -base64 12)"
 mysql -u root -p$MYSQL_ROOT_PASSWORD -e "CREATE USER '$database_user'@'localhost' IDENTIFIED BY '$database_user_password';"
@@ -116,10 +122,12 @@ mysql -u root -p$MYSQL_ROOT_PASSWORD -e "CREATE USER '$database_user'@'localhost
 mysql -u root -p$MYSQL_ROOT_PASSWORD -e "GRANT ALL PRIVILEGES ON $database_name.* TO '$database_user'@'localhost';"
 # Flush privileges
 mysql -u root -p$MYSQL_ROOT_PASSWORD -e "FLUSH PRIVILEGES;"
-echo "Database User: \e[1m$database_user\e[0m"
-echo "Database User Password: \e[1m$database_user_password\e[0m"
-echo "Database Name: \e[1m$database_name\e[0m"
 echo -e "\e[32mDatabase User Created Successfully\e[0m"
+echo "*************** Database Details ******************"
+echo "Database User: $database_user"
+echo "Database User Password: $database_user_password"
+echo "Database Name: $database_name"
+
 # Install PHP 8.1 and its modules ubuntu 22.04
 echo -e "\e[32mInstalling PHP 8.1 and its modules\e[0m"
 # check if PHP is already installed
