@@ -55,22 +55,9 @@ apache=$(dpkg-query -W -f='${Status}' apache2 2>/dev/null | grep -c "ok installe
 if [ $apache -eq 1 ]; then
 echo -e "\e[32mApache is installed\e[0m"
 # remove apache completely 
-sudo apt-get purge apache2 apache2-utils apache2.2-bin apache2-common -y
+sudo apt-get purge apache2 -y
 sudo apt-get autoremove -y
 sudo apt-get autoclean
-sudo rm -rf /etc/apache2
-sudo rm -rf /usr/sbin/apache2
-sudo rm -rf /usr/lib/apache2
-sudo rm -rf /usr/share/apache2
-sudo rm -rf /var/www/html
-sudo rm -rf /var/www
-sudo rm -rf /var/log/apache2
-sudo rm -rf /var/cache/apache2
-sudo rm -rf /etc/default/apache2
-sudo rm -rf /var/run/apache2
-sudo rm -rf /etc/apache2/sites-available
-sudo rm -rf /etc/apache2/sites-enabled
-sudo rm -rf /usr/share/doc/apache2
 echo -e "\e[32mApache is removed completely\e[0m"
 fi
 echo -e "\e[32mInstalling Apache\e[0m"
@@ -93,27 +80,6 @@ echo "Removing MySQL completely"
 sudo apt-get purge mysql-server mysql-client mysql-common mysql-server-core-* mysql-client-core-* -y
 sudo apt-get autoremove -y
 sudo apt-get autoclean
-sudo rm -rf /etc/mysql
-sudo rm -rf /var/lib/mysql
-sudo rm -rf /var/log/mysql
-sudo rm -rf /var/log/mysql.*
-sudo rm -rf /var/run/mysqld
-sudo rm -rf /var/cache/apt/archives/mysql-*
-sudo rm -rf /usr/share/mysql
-sudo rm -rf /usr/share/mysql-common
-sudo rm -rf /usr/share/dbconfig-common
-sudo rm -rf /etc/apparmor.d/abstractions/mysql
-sudo rm -rf /etc/apparmor.d/cache/usr.sbin.mysqld
-sudo rm -rf /etc/apparmor.d/local/usr.sbin.mysqld
-sudo rm -rf /etc/apparmor.d/usr.sbin.mysqld
-sudo rm -rf /usr/sbin/mysqld
-sudo rm -rf /usr/bin/mysql
-sudo rm -rf /usr/bin/mysqladmin
-sudo rm -rf /usr/bin/mysqlcheck
-sudo rm -rf /usr/bin/mysqldump
-sudo rm -rf /usr/bin/mysqlimport
-sudo rm -rf /usr/bin/mysqlshow
-sudo rm -rf /usr/bin/mysqlslap
 echo -e "\e[32mMySQL is removed completely\e[0m"
 fi
 echo -e "\e[32mMySQL is installing..\e[0m"
@@ -159,30 +125,16 @@ echo "Removing PHP completely"
 sudo apt-get purge php* -y
 sudo apt-get autoremove -y
 sudo apt-get autoclean
-sudo rm -rf /etc/php
-sudo rm -rf /usr/bin/php
-sudo rm -rf /usr/bin/php-cgi
-sudo rm -rf /usr/bin/php-config
-sudo rm -rf /usr/bin/phpize
-sudo rm -rf /usr/lib/php
-# remove php from apache
-sudo apt-get purge libapache2-mod-php -y
-sudo apt-get autoremove -y
-sudo apt-get autoclean
-sudo rm -rf /etc/apache2/mods-available/php*
-sudo rm -rf /etc/apache2/mods-enabled/php*
-sudo rm -rf /usr/lib/apache2/modules/libphp*
-echo -e "\e[32mPHP is removed completely\e[0m"
+fi
 # remove php fpm
+# check if php fpm is already installed
+php_fpm=$(dpkg-query -W -f='${Status}' php-fpm 2>/dev/null | grep -c "ok installed")
+if [ $php_fpm -eq 1 ]; then
+echo -e "\e[32mPHP FPM is already installed\e[0m"
+echo "Removing PHP FPM completely"
 sudo apt-get purge php-fpm -y
 sudo apt-get autoremove -y
 sudo apt-get autoclean
-sudo rm -rf /etc/php
-sudo rm -rf /usr/bin/php-fpm
-sudo rm -rf /usr/lib/php
-sudo rm -rf /etc/init.d/php*
-sudo rm -rf /etc/systemd/system/php*
-sudo rm -rf /etc/systemd/php*
 echo -e "\e[32mPHP is removed completely\e[0m"
 fi
 # Install PHP 8.1 and php fpm and its modules ubuntu 22.04
@@ -206,12 +158,9 @@ then
 echo -e "\e[32mDirectory already exists\e[0m"
 rm -rf /var/www/vhosts/${domain_name}
 echo -e "\e[32mDirectory deleted\e[0m"
-echo -e "\e[32mCreating Directory for $domain_name\e[0m"
-sudo mkdir -p /var/www/vhosts/${domain_name}/public/
-else
-echo -e "\e[32mCreating Directory for $domain_name\e[0m"
-sudo mkdir -p /var/www/vhosts/${domain_name}/public/
 fi
+echo -e "\e[32mCreating Directory for $domain_name\e[0m"
+sudo mkdir -p /var/www/vhosts/${domain_name}/public/
 # Create a virtual host file
 # check if virtual host file already exists
 if [ -f "/etc/apache2/sites-available/${domain_name}.conf" ] 
