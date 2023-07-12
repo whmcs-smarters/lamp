@@ -131,8 +131,8 @@ echo "Database Name: $database_name"
 php=$(dpkg-query -W -f='${Status}' php 2>/dev/null | grep -c "ok installed")
 if [ $php -eq 1 ]; then
 echo -e "\e[32mPHP is already installed\e[0m"
-echo "Removing PHP completely"
-sudo apt-get purge php* -y
+echo "Removing PHP8.1 completely"
+sudo apt-get purge php8.1 -y
 sudo apt-get autoremove -y
 sudo apt-get autoclean
 fi
@@ -154,7 +154,7 @@ sudo add-apt-repository ppa:ondrej/php -y
 sudo apt-get update -y
 sudo apt-get install php8.1 -y
 sudo apt install unzip
-sudo apt-get install php8.1-{bcmath,bz2,intl,gd,mbstring,mysql,zip,curl} -y
+sudo apt-get install php8.1-{bcmath,bz2,intl,gd,mbstring,mysql,zip,curl,xml,cli} -y
 sudo apt-get install php8.1-fpm -y
 sudo apt-get install php libapache2-mod-php php-mysql -y
 # Restart Apache
@@ -264,3 +264,105 @@ sudo a2enmod ssl
 sudo systemctl restart apache2
 echo -e "\e[32mSSL Certificate Installed Successfully\e[0m"
 echo -e "\e[32mScript Completed Successfully\e[0m"
+echo "You can access your website at https://$domain_name"
+
+# Install the Smarters Panel on your server
+echo "Installing the Smarters Panel on your server"
+cd /var/www/vhosts/${domain_name}/
+git clone https://techsmarters@bitbucket.org/techsmarters8333/smarterpanel-base.git
+rm -rf public
+mv -f smarterpanel-base/* /var/www/vhosts/${domain_name}/
+rm -rf smarterpanel-base
+sudo chown -R www-data:www-data /var/www/vhosts/${domain_name}/
+sudo chmod -R 755 /var/www/vhosts/${domain_name}/
+cd /var/www/vhosts/${domain_name}/public/ 
+cd ~
+curl -sS https://getcomposer.org/installer -o /tmp/composer-setup.php
+HASH=`curl -sS https://composer.github.io/installer.sig`
+php -r "if (hash_file('SHA384', '/tmp/composer-setup.php') === '$HASH') { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); } echo PHP_EOL;"
+sudo php /tmp/composer-setup.php --install-dir=/usr/local/bin --filename=composer
+cd /var/www/vhosts/${domain_name}/public/
+# make sure the php versino 8.1 
+composer install
+# check if composer install successfully
+if [ $? -eq 0 ]; then
+echo -e "\e[32mComposer Installed Successfully\e[0m"
+else
+echo -e "\e[32mComposer Installation Failed\e[0m"
+fi
+# install nodejs
+sudo apt-get install nodejs -y
+# check if nodejs install successfully
+if [ $? -eq 0 ]; then
+echo -e "\e[32mNodeJS Installed Successfully\e[0m"
+else
+echo -e "\e[32mNodeJS Installation Failed\e[0m"
+fi
+# install npm 
+sudo apt-get install npm -y
+npm install -g npm@latest
+# check if npm install successfully
+if [ $? -eq 0 ]; then
+echo -e "\e[32mNPM Installed Successfully\e[0m"
+else
+echo -e "\e[32mNPM Installation Failed\e[0m"
+fi
+# npm install 
+cd /var/www/vhosts/${domain_name}/
+npm install
+# check if npm install successfully
+if [ $? -eq 0 ]; then
+echo -e "\e[32mNPM Installed Successfully\e[0m"
+else
+echo -e "\e[32mNPM Installation Failed\e[0m"
+fi
+# npm run dev
+npm run dev
+# check if npm run dev successfully
+if [ $? -eq 0 ]; then
+echo -e "\e[32mNPM Run Dev Successfully\e[0m"
+else
+echo -e "\e[32mNPM Run Dev Failed\e[0m"
+fi
+# primission to laravel storage
+sudo chmod -R 777 /var/www/vhosts/${domain_name}/storage
+# primission to laravel bootstrap
+sudo chmod -R 777 /var/www/vhosts/${domain_name}/bootstrap
+# primission to laravel cache
+sudo chmod -R 777 /var/www/vhosts/${domain_name}/bootstrap/cache
+sudo chmod -R 777 /var/www/vhosts/${domain_name}/storage/logs/
+# run migration
+php artisan migrate
+# check if migration successfully
+if [ $? -eq 0 ]; then
+echo -e "\e[32mMigration Successfully\e[0m"
+else
+echo -e "\e[32mMigration Failed\e[0m"
+fi
+# run seeder
+php artisan db:seed
+# check if seeder successfully
+if [ $? -eq 0 ]; then
+echo -e "\e[32mSeeder Successfully\e[0m"
+else
+echo -e "\e[32mSeeder Failed\e[0m"
+fi
+# run artisan key generate
+php artisan key:generate
+# run artisan optimize
+php artisan optimize
+# check if artisan optimize successfully
+if [ $? -eq 0 ]; then
+echo -e "\e[32mArtisan Optimize Successfully\e[0m"
+else
+echo -e "\e[32mArtisan Optimize Failed\e[0m"
+fi
+echo -e "\e[32mSmarters Panel Installed Successfully\e[0m"
+# show user the panel url
+echo "You can access your admin panel at https://$domain_name/"
+
+
+
+
+
+
