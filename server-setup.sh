@@ -50,14 +50,16 @@ echo -e "\e[32mUpdating the repository\e[0m"
 sudo apt-get update -y 
 # Install Apache, MySQL, PHP
 echo -e "\e[32mInstalling Apache, MySQL, PHP\e[0m"
-# check if apache is already installed
+# Install Apache
 apache=$(dpkg-query -W -f='${Status}' apache2 2>/dev/null | grep -c "ok installed")
 if [ $apache -eq 1 ]; then
 echo -e "\e[32mApache is installed\e[0m"
 # remove apache completely 
-sudo apt-get purge apache2 -y
-sudo apt-get autoremove -y
-sudo apt-get autoclean
+echo "Removing Apache completely with configuration files"
+sudo service apache2 stop
+sudo apt purge apache2 apache2-utils apache2-bin -y
+sudo apt autoremove -y
+sudo rm -rf /etc/apache2
 echo -e "\e[32mApache is removed completely\e[0m"
 fi
 echo -e "\e[32mInstalling Apache\e[0m"
@@ -67,9 +69,17 @@ echo -e "\e[32mEnabling Apache Mods\e[0m"
 sudo a2enmod rewrite
 # Restart Apache
 echo -e "\e[32mRestarting Apache\e[0m"
-sudo systemctl restart apache2
-echo -e "\e[32mApache Installed Successfully\e[0m"
+# Restart Apache or it will not work
+sudo systemctl restart apache2 
+# check if apache is running or not
+apache2=$(systemctl status apache2 | grep -c "active (running)")
+if [ $apache2 -eq 1 ]; then
+echo -e "\e[32mApache Installed Successfully and Running\e[0m"
 echo "Apache Version: $(apache2 -v | grep -i apache | awk '{print $1 $3}')"
+else
+echo -e "\e[31mApache is not installed properly and not running\e[0m"
+exit 1
+fi
 # Install MySQL with defined password
 echo -e "\e[32mInstalling MySQL\e[0m"
 #check if mysql is already installed
