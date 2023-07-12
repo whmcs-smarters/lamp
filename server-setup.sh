@@ -6,6 +6,10 @@ case "${o}" in
 d) domain_name=${OPTARG};
 esac
 done
+# Start logging the script
+exec > >(tee -i server-setup.log)
+exec 2>&1
+
 # check if domain name is provided or not
 if [ -z "$domain_name" ]
 then
@@ -34,14 +38,8 @@ else
     echo "Invalid input. Please provide a valid domain or subdomain."
     exit 1
 fi
-
 # This script will install LAMP in Ubuntu 22.04
 echo -e "\e[32mWelcome to LAMP Installation & Configuration Script\e[0m"
-# Check if the script is running on Ubuntu 22.04 or not
-if [[ $(lsb_release -rs) != "22.04" ]]; then
-echo -e "\e[31mYou are not running Ubuntu 22.04. This script is made for Ubuntu 22.04 only!\e[0m"
-exit 1
-fi
 # Check if the script is running as root or not
 if [ "$EUID" -ne 0 ]; then
 echo -e "\e[31mPlease run this script as root\e[0m"
@@ -55,26 +53,35 @@ echo -e "\e[32mInstalling Apache, MySQL, PHP\e[0m"
 # check if apache is already installed
 apache=$(dpkg-query -W -f='${Status}' apache2 2>/dev/null | grep -c "ok installed")
 if [ $apache -eq 1 ]; then
-echo -e "\e[32mApache is already installed\e[0m"
-else
-echo -e "\e[32mApache is installing..\e[0m"
-sudo apt-get install apache2 -y
-fi
-# check if apache is already installed
-apache=$(dpkg-query -W -f='${Status}' apache2 2>/dev/null | grep -c "ok installed")
-if [ $apache -eq 1 ]; then
 echo -e "\e[32mApache is installed\e[0m"
-else
-echo -e "\e[31mApache is not installed\e[0m"
-exit 1
+# remove apache completely 
+sudo apt-get purge apache2 apache2-utils apache2.2-bin apache2-common -y
+sudo apt-get autoremove -y
+sudo apt-get autoclean
+sudo rm -rf /etc/apache2
+sudo rm -rf /usr/sbin/apache2
+sudo rm -rf /usr/lib/apache2
+sudo rm -rf /usr/share/apache2
+sudo rm -rf /var/www/html
+sudo rm -rf /var/www
+sudo rm -rf /var/log/apache2
+sudo rm -rf /var/cache/apache2
+sudo rm -rf /etc/default/apache2
+sudo rm -rf /var/run/apache2
+sudo rm -rf /etc/apache2/sites-available
+sudo rm -rf /etc/apache2/sites-enabled
+sudo rm -rf /usr/share/doc/apache2
+echo -e "\e[32mApache is removed completely\e[0m"
 fi
+echo -e "\e[32mInstalling Apache\e[0m"
+sudo apt-get install apache2 -y
 # Enable Apache Mods
 echo -e "\e[32mEnabling Apache Mods\e[0m"
 sudo a2enmod rewrite
 # Restart Apache
 echo -e "\e[32mRestarting Apache\e[0m"
 sudo systemctl restart apache2
-echo -e "\e[32mApache Installed and Restart Successfully\e[0m"
+echo -e "\e[32mApache Installed Successfully\e[0m"
 echo "Apache Version: $(apache2 -v | grep -i apache | awk '{print $1 $3}')"
 # Install MySQL with defined password
 echo -e "\e[32mInstalling MySQL\e[0m"
@@ -82,7 +89,33 @@ echo -e "\e[32mInstalling MySQL\e[0m"
 mysql=$(dpkg-query -W -f='${Status}' mysql-server 2>/dev/null | grep -c "ok installed")
 if [ $mysql -eq 1 ]; then
 echo -e "\e[32mMySQL is already installed\e[0m"
-else
+echo "Removing MySQL completely"
+sudo apt-get purge mysql-server mysql-client mysql-common mysql-server-core-* mysql-client-core-* -y
+sudo apt-get autoremove -y
+sudo apt-get autoclean
+sudo rm -rf /etc/mysql
+sudo rm -rf /var/lib/mysql
+sudo rm -rf /var/log/mysql
+sudo rm -rf /var/log/mysql.*
+sudo rm -rf /var/run/mysqld
+sudo rm -rf /var/cache/apt/archives/mysql-*
+sudo rm -rf /usr/share/mysql
+sudo rm -rf /usr/share/mysql-common
+sudo rm -rf /usr/share/dbconfig-common
+sudo rm -rf /etc/apparmor.d/abstractions/mysql
+sudo rm -rf /etc/apparmor.d/cache/usr.sbin.mysqld
+sudo rm -rf /etc/apparmor.d/local/usr.sbin.mysqld
+sudo rm -rf /etc/apparmor.d/usr.sbin.mysqld
+sudo rm -rf /usr/sbin/mysqld
+sudo rm -rf /usr/bin/mysql
+sudo rm -rf /usr/bin/mysqladmin
+sudo rm -rf /usr/bin/mysqlcheck
+sudo rm -rf /usr/bin/mysqldump
+sudo rm -rf /usr/bin/mysqlimport
+sudo rm -rf /usr/bin/mysqlshow
+sudo rm -rf /usr/bin/mysqlslap
+echo -e "\e[32mMySQL is removed completely\e[0m"
+fi
 echo -e "\e[32mMySQL is installing..\e[0m"
 # Generate Random Password
 MYSQL_ROOT_PASSWORD="$(openssl rand -base64 12)"
@@ -93,7 +126,7 @@ echo -e "MySQL Installed with Password: \e[1m$MYSQL_ROOT_PASSWORD\e[0m"
 echo "MySQL Version: $(mysql -V | awk '{print $1,$2,$3}')"
 echo -e "\e[32mMySQL Installed Successfully\e[0m"
 echo "MySQL Version: $(mysql -V | awk '{print $1,$2,$3}')"
-fi
+
 # Create a database for the domain name provided by the user
 echo -e "\e[32mCreating Database and DB User\e[0m"
 database_name="smarterspanel_db";
@@ -122,8 +155,37 @@ echo "Database Name: $database_name"
 php=$(dpkg-query -W -f='${Status}' php 2>/dev/null | grep -c "ok installed")
 if [ $php -eq 1 ]; then
 echo -e "\e[32mPHP is already installed\e[0m"
-else
-# Install PHP 8.1 and its modules ubuntu 22.04
+echo "Removing PHP completely"
+sudo apt-get purge php* -y
+sudo apt-get autoremove -y
+sudo apt-get autoclean
+sudo rm -rf /etc/php
+sudo rm -rf /usr/bin/php
+sudo rm -rf /usr/bin/php-cgi
+sudo rm -rf /usr/bin/php-config
+sudo rm -rf /usr/bin/phpize
+sudo rm -rf /usr/lib/php
+# remove php from apache
+sudo apt-get purge libapache2-mod-php -y
+sudo apt-get autoremove -y
+sudo apt-get autoclean
+sudo rm -rf /etc/apache2/mods-available/php*
+sudo rm -rf /etc/apache2/mods-enabled/php*
+sudo rm -rf /usr/lib/apache2/modules/libphp*
+echo -e "\e[32mPHP is removed completely\e[0m"
+# remove php fpm
+sudo apt-get purge php-fpm -y
+sudo apt-get autoremove -y
+sudo apt-get autoclean
+sudo rm -rf /etc/php
+sudo rm -rf /usr/bin/php-fpm
+sudo rm -rf /usr/lib/php
+sudo rm -rf /etc/init.d/php*
+sudo rm -rf /etc/systemd/system/php*
+sudo rm -rf /etc/systemd/php*
+echo -e "\e[32mPHP is removed completely\e[0m"
+fi
+# Install PHP 8.1 and php fpm and its modules ubuntu 22.04
 echo -e "\e[32mInstalling PHP 8.1 and its modules\e[0m"
 sudo apt-get install software-properties-common -y
 sudo add-apt-repository ppa:ondrej/php -y
@@ -131,14 +193,13 @@ sudo apt-get update -y
 sudo apt-get install php8.1 -y
 sudo apt install unzip
 sudo apt-get install php8.1-{bcmath,bz2,intl,gd,mbstring,mysql,zip,curl} -y
+sudo apt-get install php8.1-fpm -y
 sudo apt-get install php libapache2-mod-php php-mysql -y
 # Restart Apache
 sudo systemctl restart apache2
 echo -e "\e[32mPHP Installed Successfully\e[0m"
 echo "PHP Version: $(php -v | grep -i cli | awk '{print $1 $2}')"
-fi
 # Create Virtual Host for the domain name provided by the user
-# create a directory for the domain name
 # check if directory already exists
 if [ -d "/var/www/vhosts/${domain_name}" ] 
 then
@@ -210,6 +271,15 @@ echo "Installing SSL Certificate"
 #echo "Updating the repository"
 #sudo apt-get update -y
 echo "Installing Certbot"
+# if already certbot exists then delete it
+if [ -d "/etc/letsencrypt" ] 
+then
+echo -e "\e[32mCertbot already exists\e[0m"
+echo -e "\e[32mDeleting Existing Certbot\e[0m"
+sudo apt-get remove certbot python3-certbot-apache -y
+echo -e "\e[32mExisting Certbot Deleted Successfully\e[0m"
+fi
+# Install Certbot
 sudo apt-get install certbot python3-certbot-apache -y
 echo -e "\e[32mCertbot Installed Successfully\e[0m"
 # Install SSL Certificate
