@@ -269,8 +269,9 @@ echo "You can access your website at https://$domain_name"
 # Install the Smarters Panel on your server
 echo "Installing the Smarters Panel on your server"
 cd /var/www/vhosts/${domain_name}/
+# remove existing files
+rm -rf *
 git clone https://techsmarters@bitbucket.org/techsmarters8333/smarterpanel-base.git
-rm -rf public
 mv -f smarterpanel-base/* /var/www/vhosts/${domain_name}/
 rm -rf smarterpanel-base
 sudo chown -R www-data:www-data /var/www/vhosts/${domain_name}/
@@ -360,9 +361,3 @@ fi
 echo -e "\e[32mSmarters Panel Installed Successfully\e[0m"
 # show user the panel url
 echo "You can access your admin panel at https://$domain_name/"
-
-
-
-
-
-
