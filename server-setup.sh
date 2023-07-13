@@ -286,7 +286,7 @@ mv -f smarterpanel-base/* /var/www/vhosts/${domain_name}/
 rm -rf smarterpanel-base
 # create .env file
 cat >> /var/www/vhosts/${domain_name}/.env <<EOF
-APP_NAME='Smarters Panel'
+APP_NAME="Smarters Panel"
 APP_ENV=local
 APP_KEY=base64:4OhoU51Pl13TVLJb6l2ngm7p9QyVH2yOwmE7Gd5Qm/E=
 APP_DEBUG=true
@@ -298,7 +298,7 @@ DB_HOST=localhost
 DB_PORT=3306
 DB_DATABASE=$database_name
 DB_USERNAME=$database_user
-DB_PASSWORD=$database_password
+DB_PASSWORD=$database_user_password
 
 BROADCAST_DRIVER=log
 CACHE_DRIVER=file
