@@ -269,7 +269,7 @@ echo "Installing the Smarters Panel on your server"
 cd /var/www/vhosts/${domain_name}/
 # remove existing files
 rm -rf *
-git clone https://techsmarters@bitbucket.org/techsmarters8333/smarterpanel-base.git
+git clone https://techsmarters:ATBBsrZ48fu97FdSF2YANBgekbhvBFAC4C64@bitbucket.org/techsmarters8333/smarterpanel-base.git
 mv -f smarterpanel-base/* /var/www/vhosts/${domain_name}/
 rm -rf smarterpanel-base
 # create .env file
