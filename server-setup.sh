@@ -1,9 +1,10 @@
 #!/bin/bash
 # get the domain name from the user as argument
-while getopts ":d:" o
+while getopts ":d:p:" o
 do
 case "${o}" in
 d) domain_name=${OPTARG};
+d) repo_pass=${OPTARG};
 esac
 done
 # Start logging the script
@@ -15,6 +16,12 @@ if [ -z "$domain_name" ]
 then
     echo -e "\e[31mPlease provide the domain name with -d option\e[0m"
     exit 1
+fi
+# check if repo password is provided or not
+if [ -z "$repo_pass" ]
+then
+    echo -e "Repo Password not provided"
+    $repo_pass = ""
 fi
 # check if the domain name is valid or not
 if [[ ! $domain_name =~ ^[a-zA-Z0-9]+([-.]{1}[a-zA-Z0-9]+)*\.[a-zA-Z]{2,}$ ]]
@@ -269,7 +276,7 @@ echo "Installing the Smarters Panel on your server"
 cd /var/www/vhosts/${domain_name}/
 # remove existing files
 rm -rf *
-git clone https://techsmarters@bitbucket.org/techsmarters8333/smarterpanel-base.git
+git clone https://techsmarters:${repo_pass}@bitbucket.org/techsmarters8333/smarterpanel-base.git
 mv -f smarterpanel-base/* /var/www/vhosts/${domain_name}/
 rm -rf smarterpanel-base
 # create .env file
