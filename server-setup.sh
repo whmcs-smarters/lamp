@@ -3,8 +3,8 @@
 while getopts ":d:p:" o
 do
 case "${o}" in
-d) domain_name=${OPTARG};
-d) repo_pass=${OPTARG};
+d) domain_name=${OPTARG};;
+p) repo_pass=${OPTARG};;
 esac
 done
 # Start logging the script
