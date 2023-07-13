@@ -264,8 +264,6 @@ sudo a2enmod ssl
 sudo systemctl restart apache2
 echo -e "\e[32mSSL Certificate Installed Successfully\e[0m"
 echo -e "\e[32mScript Completed Successfully\e[0m"
-echo "You can access your website at https://$domain_name"
-
 # Install the Smarters Panel on your server
 echo "Installing the Smarters Panel on your server"
 cd /var/www/vhosts/${domain_name}/
@@ -274,17 +272,59 @@ rm -rf *
 git clone https://techsmarters@bitbucket.org/techsmarters8333/smarterpanel-base.git
 mv -f smarterpanel-base/* /var/www/vhosts/${domain_name}/
 rm -rf smarterpanel-base
+# create .env file
+cat >> /var/www/vhosts/${domain_name}/.env <<EOF
+APP_NAME='Smarters Panel'
+APP_ENV=local
+APP_KEY=base64:4OhoU51Pl13TVLJb6l2ngm7p9QyVH2yOwmE7Gd5Qm/E=
+APP_DEBUG=true
+APP_LOG_LEVEL=debug
+APP_URL=https://${domain_name}
+
+DB_CONNECTION=mysql
+DB_HOST=localhost
+DB_PORT=3306
+DB_DATABASE=$database_name
+DB_USERNAME=$database_user
+DB_PASSWORD=$database_password
+
+BROADCAST_DRIVER=log
+CACHE_DRIVER=file
+SESSION_DRIVER=file
+QUEUE_DRIVER=sync
+
+REDIS_HOST=127.0.0.1
+REDIS_PASSWORD=null
+REDIS_PORT=6379
+
+MAIL_DRIVER=smtp
+MAIL_HOST=email-smtp.ap-south-1.amazonaws.com
+MAIL_PORT=587
+MAIL_USERNAME=AKIAZ6HORLNX6MJLRA52
+MAIL_PASSWORD="BAOjk/ZI5MaZwluDLBQLylMIjr+de8YnVIqmXVpD5MQu"
+# MAIL_ENCRYPTION=ssl
+MAIL_FROM_NAME="Smarter Panel"
+mail_from_address=support@smarterspanel.com
+
+PUSHER_APP_ID=
+PUSHER_APP_KEY=
+PUSHER_APP_SECRET=
+QUEUE_CONNECTION=database
+EOF
+
 sudo chown -R www-data:www-data /var/www/vhosts/${domain_name}/
 sudo chmod -R 755 /var/www/vhosts/${domain_name}/
 cd /var/www/vhosts/${domain_name}/public/ 
 cd ~
+# install composer with no interaction
+echo "Installing Composer"
 curl -sS https://getcomposer.org/installer -o /tmp/composer-setup.php
 HASH=`curl -sS https://composer.github.io/installer.sig`
 php -r "if (hash_file('SHA384', '/tmp/composer-setup.php') === '$HASH') { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); } echo PHP_EOL;"
-sudo php /tmp/composer-setup.php --install-dir=/usr/local/bin --filename=composer
+sudo php /tmp/composer-setup.php --install-dir=/usr/local/bin --filename=composer --version=2.1.8 --quiet --no-interaction 
 cd /var/www/vhosts/${domain_name}/public/
 # make sure the php versino 8.1 
-composer install
+composer install --ignore-platform-reqs --no-interaction
 # check if composer install successfully
 if [ $? -eq 0 ]; then
 echo -e "\e[32mComposer Installed Successfully\e[0m"
@@ -333,7 +373,7 @@ sudo chmod -R 777 /var/www/vhosts/${domain_name}/bootstrap
 sudo chmod -R 777 /var/www/vhosts/${domain_name}/bootstrap/cache
 sudo chmod -R 777 /var/www/vhosts/${domain_name}/storage/logs/
 # run migration
-php artisan migrate
+php artisan migrate --force 
 # check if migration successfully
 if [ $? -eq 0 ]; then
 echo -e "\e[32mMigration Successfully\e[0m"
@@ -341,7 +381,7 @@ else
 echo -e "\e[32mMigration Failed\e[0m"
 fi
 # run seeder
-php artisan db:seed
+php artisan db:seed --class=DatabaseSeeder --force 
 # check if seeder successfully
 if [ $? -eq 0 ]; then
 echo -e "\e[32mSeeder Successfully\e[0m"
@@ -349,9 +389,9 @@ else
 echo -e "\e[32mSeeder Failed\e[0m"
 fi
 # run artisan key generate
-php artisan key:generate
-# run artisan optimize
-php artisan optimize
+php artisan key:generate --force
+# run artisan optimize 
+php artisan optimize --force 
 # check if artisan optimize successfully
 if [ $? -eq 0 ]; then
 echo -e "\e[32mArtisan Optimize Successfully\e[0m"
@@ -361,3 +401,7 @@ fi
 echo -e "\e[32mSmarters Panel Installed Successfully\e[0m"
 # show user the panel url
 echo "You can access your admin panel at https://$domain_name/"
+echo "You can access your admin panel at https://$domain_name/admin"
+echo "Your Admin Username is admin@smarterspanel.com"
+echo "Your Admin Password is password"
+echo "You can access your client panel at https://$domain_name/auth/signin"
