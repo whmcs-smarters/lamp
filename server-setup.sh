@@ -1,5 +1,5 @@
 #!/bin/bash
-# get the domain name from the user as argument
+# This script will install LAMP in Ubuntu 22.04
 while getopts ":d:p:" o
 do
 case "${o}" in
@@ -143,17 +143,6 @@ sudo apt-get purge php8.1 -y
 sudo apt-get autoremove -y
 sudo apt-get autoclean
 fi
-# remove php fpm
-# check if php fpm is already installed
-php_fpm=$(dpkg-query -W -f='${Status}' php-fpm 2>/dev/null | grep -c "ok installed")
-if [ $php_fpm -eq 1 ]; then
-echo -e "\e[32mPHP FPM is already installed\e[0m"
-echo "Removing PHP FPM completely"
-sudo apt-get purge php-fpm -y
-sudo apt-get autoremove -y
-sudo apt-get autoclean
-echo -e "\e[32mPHP is removed completely\e[0m"
-fi
 # Install PHP 8.1 and php fpm and its modules ubuntu 22.04
 echo -e "\e[32mInstalling PHP 8.1 and its modules\e[0m"
 sudo apt-get install software-properties-common -y
@@ -162,8 +151,24 @@ sudo apt-get update -y
 sudo apt-get install php8.1 -y
 sudo apt install unzip
 sudo apt-get install php8.1-{bcmath,bz2,intl,gd,mbstring,mysql,zip,curl,xml,cli} -y
-sudo apt-get install php8.1-fpm -y
-sudo apt-get install php libapache2-mod-php php-mysql -y
+# check php version 
+php_version=$(php -r 'echo PHP_VERSION;')
+desired_version="8.1"
+if [[ $php_version == *"$desired_version"* ]]; then
+echo -e "\e[32mPHP Installed Successfully\e[0m"
+echo "PHP Version: $(php -v | grep -i cli | awk '{print $1 $2}')"
+else
+# switch to php 8.1
+sudo update-alternatives --set php /usr/bin/php8.1
+# check if php install successfully
+if [ $? -eq 0 ]; then
+echo -e "\e[32mPHP Installed Successfully\e[0m"
+echo "PHP Version: $(php -v | grep -i cli | awk '{print $1 $2}')"
+else
+# show error message in red color and exit the script
+echo -e "\e[31mPHP Installation Failed\e[0m"
+exit 1
+fi
 # Restart Apache
 sudo systemctl restart apache2
 echo -e "\e[32mPHP Installed Successfully\e[0m"
@@ -329,14 +334,16 @@ curl -sS https://getcomposer.org/installer -o /tmp/composer-setup.php
 HASH=`curl -sS https://composer.github.io/installer.sig`
 php -r "if (hash_file('SHA384', '/tmp/composer-setup.php') === '$HASH') { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); } echo PHP_EOL;"
 sudo php /tmp/composer-setup.php --install-dir=/usr/local/bin --filename=composer --version=2.1.8 --quiet --no-interaction 
-cd /var/www/vhosts/${domain_name}/public/
+cd /var/www/vhosts/${domain_name}/
 # make sure the php versino 8.1 
-composer install --ignore-platform-reqs --no-interaction
+composer install --no-interaction
 # check if composer install successfully
 if [ $? -eq 0 ]; then
 echo -e "\e[32mComposer Installed Successfully\e[0m"
 else
-echo -e "\e[32mComposer Installation Failed\e[0m"
+# show error message in red color and exit the script
+echo -e "\e[31mComposer Installation Failed\e[0m"
+exit 1
 fi
 # install nodejs
 sudo apt-get install nodejs -y
@@ -344,7 +351,9 @@ sudo apt-get install nodejs -y
 if [ $? -eq 0 ]; then
 echo -e "\e[32mNodeJS Installed Successfully\e[0m"
 else
-echo -e "\e[32mNodeJS Installation Failed\e[0m"
+# show error message in red color and exit the script
+echo -e "\e[31mNodeJS Installation Failed\e[0m"
+exit 1
 fi
 # install npm 
 sudo apt-get install npm -y
