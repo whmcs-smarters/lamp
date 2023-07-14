@@ -21,8 +21,8 @@ fi
 # check if repo password is provided or not
 if [ -z "$repo_pass" ]
 then
-    echo -e "Repo Password not provided"
-    $repo_pass = ""
+echo -e "Repo Password not provided"
+repo_pass=""
 fi
 # check if the domain name is valid or not
 if [[ ! $domain_name =~ ^[a-zA-Z0-9]+([-.]{1}[a-zA-Z0-9]+)*\.[a-zA-Z]{2,}$ ]]
