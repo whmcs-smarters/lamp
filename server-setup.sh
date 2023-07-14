@@ -346,7 +346,9 @@ echo -e "\e[31mComposer Installation Failed\e[0m"
 exit 1
 fi
 # install nodejs
-sudo apt-get install nodejs -y
+# sudo apt-get install nodejs -y
+curl -fsSL https://deb.nodesource.com/setup_14.x | sudo -E bash -
+sudo apt-get install -y nodejs
 # check if nodejs install successfully
 if [ $? -eq 0 ]; then
 echo -e "\e[32mNodeJS Installed Successfully\e[0m"
@@ -362,16 +364,18 @@ npm install -g npm@latest
 if [ $? -eq 0 ]; then
 echo -e "\e[32mNPM Installed Successfully\e[0m"
 else
-echo -e "\e[32mNPM Installation Failed\e[0m"
+echo -e "\e[31mNPM Installation Failed\e[0m"
+exit 1
 fi
 # npm install 
 cd /var/www/vhosts/${domain_name}/
-npm install
+npm install --no-interaction
 # check if npm install successfully
 if [ $? -eq 0 ]; then
 echo -e "\e[32mNPM Installed Successfully\e[0m"
 else
-echo -e "\e[32mNPM Installation Failed\e[0m"
+echo -e "\e[31mNPM Installation Failed\e[0m"
+exit 1
 fi
 # npm run dev
 npm run dev
@@ -379,7 +383,8 @@ npm run dev
 if [ $? -eq 0 ]; then
 echo -e "\e[32mNPM Run Dev Successfully\e[0m"
 else
-echo -e "\e[32mNPM Run Dev Failed\e[0m"
+echo -e "\e[31mNPM Run Dev Failed\e[0m"
+exit 1
 fi
 # primission to laravel storage
 sudo chmod -R 777 /var/www/vhosts/${domain_name}/storage
@@ -394,7 +399,7 @@ php artisan migrate --force
 if [ $? -eq 0 ]; then
 echo -e "\e[32mMigration Successfully\e[0m"
 else
-echo -e "\e[32mMigration Failed\e[0m"
+echo -e "\e[31mMigration Failed\e[0m"
 fi
 # run seeder
 php artisan db:seed --class=DatabaseSeeder --force 
@@ -402,7 +407,7 @@ php artisan db:seed --class=DatabaseSeeder --force
 if [ $? -eq 0 ]; then
 echo -e "\e[32mSeeder Successfully\e[0m"
 else
-echo -e "\e[32mSeeder Failed\e[0m"
+echo -e "\e[31mSeeder Failed\e[0m"
 fi
 # run artisan key generate
 php artisan key:generate --force
@@ -412,7 +417,7 @@ php artisan optimize --force
 if [ $? -eq 0 ]; then
 echo -e "\e[32mArtisan Optimize Successfully\e[0m"
 else
-echo -e "\e[32mArtisan Optimize Failed\e[0m"
+echo -e "\e[31mArtisan Optimize Failed\e[0m"
 fi
 echo -e "\e[32mSmarters Panel Installed Successfully\e[0m"
 # show user the panel url
