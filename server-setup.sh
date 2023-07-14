@@ -247,6 +247,7 @@ echo "PHP Version: $(php -v | grep -i cli | awk '{print $1 $2}')"
 if [ ! -z "$domain_name" ]; then
 public_dir="/var/www/vhosts/${domain_name}/public/"
 larave_dir="/var/www/vhosts/${domain_name}/"
+app_url="http://${domain_name}"
 # Create Virtual Host for the domain name provided by the user
 echo "Creating Virtual Host File for $domain_name"
 # check if already virtual host file exists
@@ -358,24 +359,31 @@ sudo a2enmod ssl
 sudo systemctl restart apache2
 fi
 else
+# Enable SSL
+echo "Enabling SSL"
+sudo a2enmod ssl
+# Restart Apache
+sudo systemctl restart apache2
 # Install SSL Certificate with www and non-www domain name and without email address
 if [ "$isSubdomain" = true ] ; then
 sudo certbot --apache -d $domain_name --register-unsafely-without-email --agree-tos -n
 else
 sudo certbot --apache -d $domain_name -d www.$domain_name --register-unsafely-without-email --agree-tos -n 
 fi
-# Enable SSL
-echo "Enabling SSL"
-sudo a2enmod ssl
-# Restart Apache
-sudo systemctl restart apache2
-fi
-echo "SSL Certificate Installed Successfully for $domain_name"
-echo "SSL Certificate Installation Script Completed"
+# check if ssl certificate installed successfully
+if [ $? -eq 0 ]; then
+echo -e "\e[32mSSL Certificate Installed Successfully\e[0m"
+app_url="https://$domain_name"
 else
-echo -e "\e[31mDomain Name is Empty\e[0m"
+echo -e "\e[31mFailed to Install SSL Certificate\e[0m"
+app_url="http://$domain_name"
+fi
+fi
+else
+echo -e "\e[32mDomain Name is not provided by user with option -d So, we are installing with IP Address\e[0m"
 public_dir="/var/www/html/public/"
 larave_dir="/var/www/html/"
+app_url="http://$ip_address"
 # get ip address
 ip_address=$(curl -s http://checkip.amazonaws.com)
 # check if ip address is empty
@@ -428,7 +436,7 @@ APP_ENV=local
 APP_KEY=base64:4OhoU51Pl13TVLJb6l2ngm7p9QyVH2yOwmE7Gd5Qm/E=
 APP_DEBUG=true
 APP_LOG_LEVEL=debug
-APP_URL=https://${domain_name}
+APP_URL=${app_url}
 
 DB_CONNECTION=mysql
 DB_HOST=localhost
@@ -498,16 +506,18 @@ npm install -g npm@latest
 if [ $? -eq 0 ]; then
 echo -e "\e[32mNPM Installed Successfully\e[0m"
 else
-echo -e "\e[32mNPM Installation Failed\e[0m"
+echo -e "\e[31mNPM Installation Failed\e[0m"
+exit 1
 fi
 # npm install 
 cd $larave_dir
-npm install
+npm install --no-audit --no-update-notifier --no-fund --save-dev --no-bin-links --no-optional --no-package-lock --only=dev --no-progress --no-save --no-scripts --no-shrinkwrap --prefer-offline 
 # check if npm install successfully
 if [ $? -eq 0 ]; then
 echo -e "\e[32mNPM Installed Successfully\e[0m"
 else
-echo -e "\e[32mNPM Installation Failed\e[0m"
+echo -e "\e[31mNPM Installation Failed\e[0m"
+exit 1
 fi
 # npm run dev
 npm run dev
@@ -515,7 +525,8 @@ npm run dev
 if [ $? -eq 0 ]; then
 echo -e "\e[32mNPM Run Dev Successfully\e[0m"
 else
-echo -e "\e[32mNPM Run Dev Failed\e[0m"
+echo -e "\e[31mNPM Run Dev Failed\e[0m"
+exit 1
 fi
 # primission to laravel storage
 sudo chmod -R 777 $larave_dir/storage
@@ -560,8 +571,8 @@ echo -e "\e[32mArtisan Serve Failed\e[0m"
 fi
 echo -e "\e[32mSmarters Panel Installed Successfully\e[0m"
 # show user the panel url
-echo "You can access your admin panel at https://$domain_name/"
-echo "You can access your admin panel at https://$domain_name/admin"
+echo "You can access your smarters panel at $app_url"
+echo "You can access your admin panel at $app_url/admin"
 echo "Your Admin Username is admin@smarterspanel.com"
 echo "Your Admin Password is password"
-echo "You can access your client panel at https://$domain_name/auth/signin"
+echo "You can access your client panel at $app_url/auth/signin"
