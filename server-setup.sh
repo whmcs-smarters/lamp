@@ -438,6 +438,7 @@ mv -f smarterpanel-base/* $larave_dir
 rm -rf smarterpanel-base
 # create .env file
 echo "Creating .env file"
+sudo truncate -s 0 $larave_dir/.env
 cat >> $larave_dir/.env <<EOF
 APP_NAME="Smarters Panel"
 APP_ENV=local
@@ -525,6 +526,7 @@ else
 echo -e "\e[31mNPM Run Dev Failed\e[0m"
 exit 1
 fi
+php artisan key:generate
 # primission to laravel storage
 sudo chmod -R 777 $larave_dir/storage
 # primission to laravel bootstrap
@@ -532,13 +534,15 @@ sudo chmod -R 777 $larave_dir/bootstrap
 # primission to laravel cache
 sudo chmod -R 777 $larave_dir/bootstrap/cache
 sudo chmod -R 777 $larave_dir/storage/logs/
-# run seeder
-php artisan db:seed --force 
-# run artisan key generate
-php artisan key:generate --force
-fi
 # run migration
-php artisan migrate --force 
+php artisan migrate 
+# run seeder
+# check if laravel vendor folder exist
+if [ -d "$larave_dir/vendor" ]; then
+php artisan db:seed
+fi
+# run artisan key generate
+fi
 # check if migration successfully
 if [ $? -eq 0 ]; then
 echo -e "\e[32mMigration Successfully\e[0m"
@@ -552,7 +556,7 @@ else
 echo -e "\e[32mSeeder Failed\e[0m"
 fi
 # run artisan optimize 
-php artisan optimize --force 
+php artisan optimize:clear
 # check if artisan optimize successfully
 if [ $? -eq 0 ]; then
 echo -e "\e[32mArtisan Optimize Successfully\e[0m"
