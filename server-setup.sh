@@ -497,7 +497,7 @@ echo -e "\e[31mComposer Installation Failed\e[0m"
 exit 1
 fi
 # install nodejs
-curl -fsSL https://deb.nodesource.com/setup_14.x | sudo -E bash -
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
 sudo apt-get install -y nodejs
 # check if nodejs install successfully
 if [ $? -eq 0 ]; then
@@ -507,19 +507,8 @@ else
 echo -e "\e[31mNodeJS Installation Failed\e[0m"
 exit 1
 fi
-# install npm 
-sudo apt-get install npm -y
-npm install -g npm@latest
-# check if npm install successfully
-if [ $? -eq 0 ]; then
-echo -e "\e[32mNPM Installed Successfully\e[0m"
-else
-echo -e "\e[31mNPM Installation Failed\e[0m"
-exit 1
-fi
-# npm install 
 cd $larave_dir
-npm install --no-audit --no-update-notifier --no-fund --save-dev --no-bin-links --no-optional --no-package-lock --only=dev --no-progress --no-save --no-scripts --no-shrinkwrap --prefer-offline 
+npm install 
 # check if npm install successfully
 if [ $? -eq 0 ]; then
 echo -e "\e[32mNPM Installed Successfully\e[0m"
