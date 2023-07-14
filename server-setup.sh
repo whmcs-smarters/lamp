@@ -44,6 +44,9 @@ if [ -z "$repo_pass" ]
 then
 echo -e "Repo Password not provided"
 repo_pass=""
+else
+echo -e "Repo Password is provided"
+repo_pass=":$repo_pass"
 fi
 
 # This script will install LAMP in Ubuntu 22.04
@@ -409,13 +412,13 @@ cd $larave_dir
 if [ -f "$larave_dir/composer.json" ]; then
 # git pull
 echo "Updating the Smarters Panel"
-git clone https://techsmarters:${repo_pass}@bitbucket.org/techsmarters8333/smarterpanel-base.git
+git clone https://techsmarters${repo_pass}@bitbucket.org/techsmarters8333/smarterpanel-base.git
 mv -f smarterpanel-base/* $larave_dir
 rm -rf smarterpanel-base
 else
 # remove existing files
 rm -rf *
-git clone https://techsmarters:${repo_pass}@bitbucket.org/techsmarters8333/smarterpanel-base.git
+git clone https://techsmarters${repo_pass}@bitbucket.org/techsmarters8333/smarterpanel-base.git
 mv -f smarterpanel-base/* $larave_dir
 rm -rf smarterpanel-base
 # create .env file
