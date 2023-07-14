@@ -383,9 +383,10 @@ else
 echo -e "\e[32mDomain Name is not provided by user with option -d So, we are installing with IP Address\e[0m"
 public_dir="/var/www/html/public/"
 larave_dir="/var/www/html/"
+ip_address=$(curl -s http://checkip.amazonaws.com)
 app_url="http://$ip_address"
 # get ip address
-ip_address=$(curl -s http://checkip.amazonaws.com)
+
 # check if ip address is empty
 if [ -z "$ip_address" ]; then
 echo -e "\e[31mIP Address is Empty\e[0m"
