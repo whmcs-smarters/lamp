@@ -13,23 +13,9 @@ exec > >(tee -i server-setup.log)
 exec 2>&1
 
 # check if domain name is provided or not
-# if [ -z "$domain_name" ]
-# then
-#     echo -e "\e[31mPlease provide the domain name with -d option\e[0m"
-#     exit 1
-# fi
-# check if repo password is provided or not
-if [ -z "$repo_pass" ]
-then
-echo -e "Repo Password not provided"
-repo_pass=""
-fi
+if [ ! -z "$domain_name" ]; then
 # check if the domain name is valid or not
-if [[ ! $domain_name =~ ^[a-zA-Z0-9]+([-.]{1}[a-zA-Z0-9]+)*\.[a-zA-Z]{2,}$ ]]
-then
-    echo -e "\e[31mPlease provide a valid domain name\e[0m"
-    exit 1
-fi
+if [[ ! $domain_name =~ ^[a-zA-Z0-9]+([-.]{1}[a-zA-Z0-9]+)*\.[a-zA-Z]{2,}$ ]] ; then
 # check if domain or subdomain 
 input=$domain_name
 # Split the input into an array using dot as the delimiter
@@ -46,6 +32,20 @@ else
     echo "Invalid input. Please provide a valid domain or subdomain."
     exit 1
 fi
+else
+echo -e "\e[31mPlease provide a valid domain name\e[0m"
+exit 1
+fi
+else
+echo -e "\e[32mDomain name is not provided by user with -d option\e[0m"
+fi
+# check if repo password is provided or not
+if [ -z "$repo_pass" ]
+then
+echo -e "Repo Password not provided"
+repo_pass=""
+fi
+
 # This script will install LAMP in Ubuntu 22.04
 echo -e "\e[32mWelcome to LAMP Installation & Configuration Script\e[0m"
 # Check if the script is running as root or not
