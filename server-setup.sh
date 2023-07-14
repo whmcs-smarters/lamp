@@ -196,9 +196,9 @@ echo "*************** Database Details ******************"
 echo "Database User: $database_user"
 echo "Database User Password: $database_user_password"
 fi
-else
-echo -e "\e[31mMySql is already installed Please provide MySQL ROOT PASSWOrd as option -m\e[0m"
-exit 1
+# else
+# echo -e "\e[31mMySql is already installed Please provide MySQL ROOT PASSWOrd as option -m\e[0m"
+# exit 1
 fi
 # check if PHP is already installed
 desired_version="8.1"
@@ -410,6 +410,7 @@ if [ -f "$larave_dir/composer.json" ]; then
 # git pull
 echo "Updating the Smarters Panel"
 git clone https://techsmarters:${repo_pass}@bitbucket.org/techsmarters8333/smarterpanel-base.git
+
 mv -f smarterpanel-base/* $larave_dir
 rm -rf smarterpanel-base
 else
@@ -547,6 +548,14 @@ echo -e "\e[32mArtisan Optimize Successfully\e[0m"
 else
 echo -e "\e[32mArtisan Optimize Failed\e[0m"
 fi
+php artisan serve &
+# check if artisan serve successfully
+if [ $? -eq 0 ]; then
+echo -e "\e[32mArtisan Serve Successfully\e[0m"
+else
+echo -e "\e[32mArtisan Serve Failed\e[0m"
+fi
+
 echo -e "\e[32mSmarters Panel Installed Successfully\e[0m"
 # show user the panel url
 echo "You can access your admin panel at https://$domain_name/"
