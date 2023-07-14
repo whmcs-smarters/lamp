@@ -416,6 +416,7 @@ EOF
  # enable the virtual host
 echo "Enabling the virtual host"
 sudo a2ensite 001-default.conf
+sudo a2dissite 000-default.conf
 # Restart Apache
 echo "Restarting Apache"
 sudo systemctl restart apache2
