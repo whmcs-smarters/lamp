@@ -418,7 +418,6 @@ sudo a2ensite 001-default.conf
 # Restart Apache
 echo "Restarting Apache"
 sudo systemctl restart apache2
-
 fi
 ########## Install Smarters Panel ##########
 # Install the Smarters Panel on your server
