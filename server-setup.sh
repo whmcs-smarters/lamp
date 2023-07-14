@@ -564,13 +564,7 @@ echo -e "\e[32mArtisan Optimize Successfully\e[0m"
 else
 echo -e "\e[32mArtisan Optimize Failed\e[0m"
 fi
-php artisan serve &
-# check if artisan serve successfully
-if [ $? -eq 0 ]; then
-echo -e "\e[32mArtisan Serve Successfully\e[0m"
-else
-echo -e "\e[32mArtisan Serve Failed\e[0m"
-fi
+
 echo -e "\e[32mSmarters Panel Installed Successfully\e[0m"
 # show user the panel url
 echo "You can access your smarters panel at $app_url"
