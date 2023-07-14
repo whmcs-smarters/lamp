@@ -386,7 +386,6 @@ larave_dir="/var/www/html/"
 ip_address=$(curl -s http://checkip.amazonaws.com)
 app_url="http://$ip_address"
 # get ip address
-
 # check if ip address is empty
 if [ -z "$ip_address" ]; then
 echo -e "\e[31mIP Address is Empty\e[0m"
@@ -398,6 +397,8 @@ fi
 echo "Creating Virtual Host fro default /var/www/html/ directory"
 # Create virtual host configuration file
 echo "Creating virtual host configuration file"
+# empty the file
+sudo truncate -s 0 /etc/apache2/sites-available/001-default.conf
 cat >> /etc/apache2/sites-available/001-default.conf <<EOF
 <VirtualHost *:80>
 <Directory /var/www/html/public/>
@@ -412,6 +413,12 @@ cat >> /etc/apache2/sites-available/001-default.conf <<EOF
     CustomLog \${APACHE_LOG_DIR}/access.log combined
 </VirtualHost>
 EOF
+ # enable the virtual host
+sudo a2ensite 001-default.conf
+# Restart Apache
+echo "Restarting Apache"
+sudo systemctl restart apache2
+
 fi
 ########## Install Smarters Panel ##########
 # Install the Smarters Panel on your server
@@ -431,6 +438,7 @@ git clone https://techsmarters${repo_pass}@bitbucket.org/techsmarters8333/smarte
 mv -f smarterpanel-base/* $larave_dir
 rm -rf smarterpanel-base
 # create .env file
+echo "Creating .env file"
 cat >> $larave_dir/.env <<EOF
 APP_NAME="Smarters Panel"
 APP_ENV=local
