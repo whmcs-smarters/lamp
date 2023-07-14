@@ -160,7 +160,7 @@ MYSQL_ROOT_PASSWORD="$(openssl rand -base64 12)"
 sudo debconf-set-selections <<< "mysql-server mysql-server/root_password password $MYSQL_ROOT_PASSWORD"
 sudo debconf-set-selections <<< "mysql-server mysql-server/root_password_again password $MYSQL_ROOT_PASSWORD"
 sudo apt-get install mysql-server -y
-if $? -eq 0 ]; then
+if [ $? -eq 0 ]; then
 echo -e "\e[32mMySQL Installed with Password: \e[1m$MYSQL_ROOT_PASSWORD\e[0m"
 echo "MySQL Version: $(mysql -V | awk '{print $1,$2,$3}')"
 else
