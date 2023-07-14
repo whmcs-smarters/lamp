@@ -13,11 +13,11 @@ exec > >(tee -i server-setup.log)
 exec 2>&1
 
 # check if domain name is provided or not
-if [ -z "$domain_name" ]
-then
-    echo -e "\e[31mPlease provide the domain name with -d option\e[0m"
-    exit 1
-fi
+# if [ -z "$domain_name" ]
+# then
+#     echo -e "\e[31mPlease provide the domain name with -d option\e[0m"
+#     exit 1
+# fi
 # check if repo password is provided or not
 if [ -z "$repo_pass" ]
 then
