@@ -410,7 +410,6 @@ if [ -f "$larave_dir/composer.json" ]; then
 # git pull
 echo "Updating the Smarters Panel"
 git clone https://techsmarters:${repo_pass}@bitbucket.org/techsmarters8333/smarterpanel-base.git
-
 mv -f smarterpanel-base/* $larave_dir
 rm -rf smarterpanel-base
 else
@@ -522,6 +521,11 @@ sudo chmod -R 777 $larave_dir/bootstrap
 # primission to laravel cache
 sudo chmod -R 777 $larave_dir/bootstrap/cache
 sudo chmod -R 777 $larave_dir/storage/logs/
+# run seeder
+php artisan db:seed --force 
+# run artisan key generate
+php artisan key:generate --force
+fi
 # run migration
 php artisan migrate --force 
 # check if migration successfully
@@ -530,16 +534,12 @@ echo -e "\e[32mMigration Successfully\e[0m"
 else
 echo -e "\e[32mMigration Failed\e[0m"
 fi
-# run seeder
-php artisan db:seed --force 
 # check if seeder successfully
 if [ $? -eq 0 ]; then
 echo -e "\e[32mSeeder Successfully\e[0m"
 else
 echo -e "\e[32mSeeder Failed\e[0m"
 fi
-# run artisan key generate
-php artisan key:generate --force
 # run artisan optimize 
 php artisan optimize --force 
 # check if artisan optimize successfully
@@ -555,7 +555,6 @@ echo -e "\e[32mArtisan Serve Successfully\e[0m"
 else
 echo -e "\e[32mArtisan Serve Failed\e[0m"
 fi
-
 echo -e "\e[32mSmarters Panel Installed Successfully\e[0m"
 # show user the panel url
 echo "You can access your admin panel at https://$domain_name/"
