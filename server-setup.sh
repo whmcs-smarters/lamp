@@ -415,6 +415,7 @@ cat >> /etc/apache2/sites-available/001-default.conf <<EOF
 EOF
  # enable the virtual host
 echo "Enabling the virtual host"
+sudo a2ensite 000-default.conf
 sudo a2ensite 001-default.conf
 # Restart Apache
 echo "Restarting Apache"
