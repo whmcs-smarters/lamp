@@ -1,56 +1,54 @@
 #!/bin/bash
 # This script will install LAMP in Ubuntu 22.04
+echo -e "\e[1;43mWelcome to Smarters Panel Installation with LAMP\e[0m"
+# USAGE: ./server-setup.sh -d domain_name -p repo_password -m mysql_password
+# EXAMPLE: ./server-setup.sh -d example.com -p password -m password
+# Get the options from user input
 while getopts ":d:p:m:" o
 do
 case "${o}" in
 d) domain_name=${OPTARG};;
 p) repo_pass=${OPTARG};;
-m) mysql_pass=${OPTARG};;
+m) mysql_root_pass=${OPTARG};;
 esac
 done
 # Start logging the script
+echo -e "\033[33mLogging the script into server-setup.log\e[0m"
 exec > >(tee -i server-setup.log)
 exec 2>&1
 
-# check if domain name is provided or not
+# check if domain name with -d  option is provided or not
+echo -e "Checking if domain name is provided by user with -d option"
 if [ ! -z "$domain_name" ]; then
-# check if the domain name is valid or not
-if [[ ! $domain_name =~ ^[a-zA-Z0-9]+([-.]{1}[a-zA-Z0-9]+)*\.[a-zA-Z]{2,}$ ]] ; then
-# check if domain or subdomain 
 input=$domain_name
 # Split the input into an array using dot as the delimiter
 IFS='.' read -ra parts <<< "$input"
 # Check the number of parts in the input
 num_parts=${#parts[@]}
 if [[ $num_parts -gt 2 ]]; then
-    echo "The input '$input' is a subdomain."
+    # The input is a subdomain and bold it
+    echo -e " The input \033[97;44;1m $input \033[m is a subdomain."
     isSubdomain=true
 elif [[ $num_parts -eq 2 ]]; then
-    echo "The input '$input' is a domain."
+    echo -e "The input \033[97;44;1m $input \033[m is a domain."
     isSubdomain=false
 else
-    echo "Invalid input. Please provide a valid domain or subdomain."
+    echo -e "\033[1;31mInvalid Input:\033[0m\033[97;44;1m $domain_name \033[m.\033[1;31mPlease provide a valid domain or subdomain.\033[0m"
     exit 1
 fi
 else
-echo -e "\e[31mPlease provide a valid domain name\e[0m"
-exit 1
-fi
-else
-echo -e "\e[32mDomain name is not provided by user with -d option\e[0m"
+echo -e "\033[33mDomain name is not provided by user with -d option\033[0m"
 fi
 # check if repo password is provided or not
+echo -e "Checking if repo password is provided by user with -p option"
 if [ -z "$repo_pass" ]
 then
-echo -e "Repo Password not provided"
+echo -e "\033[33mRepo Password not provided\033[0m"
 repo_pass=""
 else
-echo -e "Repo Password is provided"
+echo -e "\033[33mRepo Password is provided\033[0m"
 repo_pass=":$repo_pass"
 fi
-
-# This script will install LAMP in Ubuntu 22.04
-echo -e "\e[32mWelcome to LAMP Installation & Configuration Script\e[0m"
 # Check if the script is running as root or not
 if [ "$EUID" -ne 0 ]; then
 echo -e "\e[31mPlease run this script as root\e[0m"
@@ -59,10 +57,18 @@ fi
 # Update the repository
 echo -e "\e[32mUpdating the repository\e[0m"
 sudo apt-get update -y 
+# check if apt-get update successfully
+if [ $? -eq 0 ]; then
+echo -e "\e[32mRepository Updated Successfully\e[0m"
+else
+# show error message in red color and exit the script
+echo -e "\e[31mRepository Update Failed\e[0m"
+fi
 # Install Apache, MySQL, PHP
 echo -e "\e[32mInstalling Apache, MySQL, PHP\e[0m"
 # Install Apache
 #check if apache is already installed
+echo -e "Checking if Apache is already installed or not"
 apache=$(dpkg-query -W -f='${Status}' apache2 2>/dev/null | grep -c "ok installed")
 if [ $apache -eq 1 ]; then
 echo -e "\e[32mApache is installed\e[0m"
@@ -70,7 +76,7 @@ echo -e "\e[32mApache is installed\e[0m"
 echo -e "\e[32mChecking if Apache is running or not\e[0m"
 apache_running=$(systemctl status apache2 | grep -c "active (running)")
 if [ $apache_running -eq 1 ]; then
-echo -e "\e[32mApache is running\e[0m"
+echo -e "\e[32mApache is running too\e[0m"
 else
 echo -e "\e[31mApache is not running\e[0m"
 echo -e "\e[32mStarting Apache\e[0m"
@@ -86,7 +92,7 @@ sudo service apache2 stop
 sudo apt purge apache2 apache2-utils apache2-bin -y
 sudo apt autoremove -y
 sudo rm -rf /etc/apache2
-echo -e "\e[32mApache is removed completely\e[0m"
+echo -e "mApache is removed completely"
 echo -e "\e[32mInstalling Apache\e[0m"
 sudo apt-get install apache2 -y
 # check last command executed successfully or not
@@ -95,23 +101,30 @@ echo -e "\e[32mApache is installed successfully\e[0m"
 else
 echo -e "\e[31mApache is not installed successfully\e[0m"
 exit 1
-fi
-fi
-fi
-else
+fi # check last command executed successfully or not
+fi # main if to check if apache is running or not
+fi # main if to check if apache is running or not
+else # main else to check if apache is already installed
 echo -e "\e[32mInstalling Apache\e[0m"
 sudo apt-get install apache2 -y
-fi
-
-# Enable Apache Mods
-echo -e "\e[32mEnabling Apache Mods\e[0m"
+fi #main if to check if apache is already installed
+# Enable Apache Mods if not enabled
+enable_mods=$(a2query -m rewrite)
+if [ "$enable_mods" = *"rewrite (enabled by site administrator)"* ]; then
+echo -e "\e[32mApache Mods are already enabled\e[0m"
+else
+echo -e "Enabling Apache Mods"
 sudo a2enmod rewrite
 # Restart Apache
-echo -e "\e[32mRestarting Apache\e[0m"
-# Restart Apache or it will not work
+echo -e "mRestarting Apache"
 sudo systemctl restart apache2 
-# Install MySQL with defined password
+fi
+# Installing MySQL Server with default password
 echo -e "\e[32mInstalling MySQL\e[0m"
+# check if mysql_root_pass is empty or not
+if [ ! -z "$mysql_root_pass" ]; then  
+echo -e "\e[32mInstalling MySQL\e[0m"
+MYSQL_ROOT_PASSWORD=$mysql_root_pass
 # check if mysql is already installed and running
 mysql=$(dpkg-query -W -f='${Status}' mysql-server 2>/dev/null | grep -c "ok installed")
 if [ $mysql -eq 1 ]; then
@@ -121,131 +134,70 @@ echo -e "\e[32mChecking if MySQL is running or not\e[0m"
 mysql_running=$(systemctl status mysql | grep -c "active (running)")
 if [ $mysql_running -eq 1 ]; then
 echo -e "\e[32mMySQL is running\e[0m"
-MYSQL_ROOT_PASSWORD=$mysql_pass
+# call function to create database and database user
+create_database_and_database_user $MYSQL_ROOT_PASSWORD
 else
 echo -e "\e[31mMySQL is not running\e[0m"
 echo -e "\e[32mStarting MySQL\e[0m"
-sudo systemctl start mysql 
+sudo systemctl start mysql
 mysql_running=$(systemctl status mysql | grep -c "active (running)")
 if [ $mysql_running -eq 1 ]; then
-echo -e "\e[32mMySQL is running\e[0m"
-MYSQL_ROOT_PASSWORD=$mysql_pass
+echo -e "\e[32mMySQL is running now \e[0m"
+# call function to create database and database user
+create_database_and_database_user $MYSQL_ROOT_PASSWORD
 else
 echo -e "\e[31mMySQL is not running\e[0m"
 # remove mysql completely
 echo "Removing MySQL completely with configuration files"
-sudo service mysql stop
-sudo apt purge mysql-server mysql-client mysql-common -y
-sudo apt autoremove -y
-sudo rm -rf /etc/mysql
-sudo rm -rf /var/lib/mysql
-echo -e "\e[32mMySQL is removed completely\e[0m"
+# call function to remove mysql completely
+remove_mysql_completely
+# call function to install mysql with defined password
+install_mysql_with_defined_password $MYSQL_ROOT_PASSWORD
+create_database_and_database_user $MYSQL_ROOT_PASSWORD
+fi # Closed if "Mysql is running now
+fi # Closed if mysql is running or not
+else # MySQL is already installed else condition
 echo -e "\e[32mInstalling MySQL\e[0m"
+# call function to install mysql with defined password
+install_mysql_with_defined_password $MYSQL_ROOT_PASSWORD
+create_database_and_database_user $MYSQL_ROOT_PASSWORD
+fi # main if to check if mysql is already installed
+else # mysql_root_pass if condition empty or not
 MYSQL_ROOT_PASSWORD="$(openssl rand -base64 12)"
-sudo debconf-set-selections <<< "mysql-server mysql-server/root_password password $MYSQL_ROOT_PASSWORD"
-sudo debconf-set-selections <<< "mysql-server mysql-server/root_password_again password $MYSQL_ROOT_PASSWORD"
-sudo apt-get install mysql-server -y
-if $? -eq 0 ]; then
-echo -e "\e[32mMySQL Installed with Password: \e[1m$MYSQL_ROOT_PASSWORD\e[0m"
-echo "MySQL Version: $(mysql -V | awk '{print $1,$2,$3}')"
-else
-echo -e "\e[31mMySQL Installation Failed\e[0m"
-exit 1
-fi
-fi
-fi
-else
-echo -e "\e[32mInstalling MySQL\e[0m"
-MYSQL_ROOT_PASSWORD="$(openssl rand -base64 12)"
-sudo debconf-set-selections <<< "mysql-server mysql-server/root_password password $MYSQL_ROOT_PASSWORD"
-sudo debconf-set-selections <<< "mysql-server mysql-server/root_password_again password $MYSQL_ROOT_PASSWORD"
-sudo apt-get install mysql-server -y
-if [ $? -eq 0 ]; then
-echo -e "\e[32mMySQL Installed with Password: \e[1m$MYSQL_ROOT_PASSWORD\e[0m"
-echo "MySQL Version: $(mysql -V | awk '{print $1,$2,$3}')"
-else
-echo -e "\e[31mMySQL Installation Failed\e[0m"
-exit 1
-fi
-fi
-# Create a database for the domain name provided by the user
-echo -e "\e[32mCreating Database and DB User\e[0m"
-database_name="smarterspanel_db";
-# create databse and databse user if mysql root password is not empty
-if [ ! -z "$MYSQL_ROOT_PASSWORD" ]; then
-echo -e "\e[32mCreating Database\e[0m"
-# create database if not exists
-mysql -u root -p$MYSQL_ROOT_PASSWORD -e "CREATE DATABASE IF NOT EXISTS $database_name;"
-echo -e "\e[32mDatabase $database_name Created Successfully\e[0m"
-# show databases
-echo "Showing Databases"
-mysql -u root -p$MYSQL_ROOT_PASSWORD -e "show databases;"
-database_user="smarterspanel_user";
-# check if database user is already created or not
-database_user_exists=$(mysql -u root -p$MYSQL_ROOT_PASSWORD -e "SELECT EXISTS(SELECT 1 FROM mysql.user WHERE user = '$database_user' AND host = 'localhost');")
-if [ $database_user_exists -eq 1 ]; then
-echo "Database User Already Exists"
-else
-echo "Creating Database User and Granting Privileges"
-# Create a database user for the domain name provided by the user
-database_user_password="$(openssl rand -base64 12)"
-mysql -u root -p$MYSQL_ROOT_PASSWORD -e "CREATE USER '$database_user'@'localhost' IDENTIFIED BY '$database_user_password';"
-# Grant privileges to the database user
-mysql -u root -p$MYSQL_ROOT_PASSWORD -e "GRANT ALL PRIVILEGES ON $database_name.* TO '$database_user'@'localhost';"
-# Flush privileges
-mysql -u root -p$MYSQL_ROOT_PASSWORD -e "FLUSH PRIVILEGES;"
-echo -e "\e[32mDatabase User Created Successfully\e[0m"
-echo "*************** Database Details ******************"
-echo "Database User: $database_user"
-echo "Database User Password: $database_user_password"
-fi
-# else
-# echo -e "\e[31mMySql is already installed Please provide MySQL ROOT PASSWOrd as option -m\e[0m"
-# exit 1
-fi
+install_mysql_with_defined_password $MYSQL_ROOT_PASSWORD
+create_database_and_database_user $MYSQL_ROOT_PASSWORD
+fi # mysql_root_pass if condition
+
+
+# Install PHP
 # check if PHP is already installed
 desired_version="8.1"
 #check php is installed or not
 php_path=$(which php)
 if [ -x "$php_path" ]; then
 echo "PHP is installed at: $php_path"
-php_version=$(php -v | head -n 1 | cut -d ' ' -f 2)
-echo "PHP version: $php_version"
+# check if php version is empty
 echo "Comparing PHP version"
 php_version=$(php -r 'echo PHP_VERSION;')
 if [[ $php_version == *"$desired_version"* ]]; then
 echo -e "\e[32mPHP Version is $php_version\e[0m"
+# nothing to do as PHP is already installed with desired version
 else
-echo -e "\e[31mPHP Version is $php_version\e[0m"
+echo -e "\e[31mPHP Version is $php_version that is not desired one\e[0m"
 # installed desired version of php
 echo -e "\e[32mInstalling PHP $desired_version\e[0m"
-sudo apt-get install software-properties-common -y
-sudo add-apt-repository ppa:ondrej/php -y
-sudo apt-get update -y
-sudo apt-get install php$desired_version -y
-sudo apt install unzip
-sudo apt-get install php$desired_version-{bcmath,bz2,intl,gd,mbstring,mysql,zip,curl,xml,cli} -y
-# check php version
+install_php_with_desired_version $desired_version
+fi
+else
+echo -e "\e[32mPHP is not installed\e[0m"
+install_php_with_desired_version $desired_version
+fi # main if to check if php is already installed
+php_version=$(php -v | head -n 1 | cut -d ' ' -f 2 | cut -c 1-3)
 sudo a2dismod php$php_version
 sudo a2enmod php$desired_version
 sudo service apache2 restart
 sudo update-alternatives --set php /usr/bin/php$desired_version
-fi
-else
-echo -e "\e[32mPHP is not installed\e[0m"
-# installed desired version of php
-echo -e "\e[32mInstalling PHP $desired_version\e[0m"
-sudo apt-get install software-properties-common -y
-sudo add-apt-repository ppa:ondrej/php -y
-sudo apt-get update -y
-sudo apt-get install php$desired_version -y
-sudo apt install unzip
-sudo apt-get install php$desired_version-{bcmath,bz2,intl,gd,mbstring,mysql,zip,curl,xml,cli} -y
-# check 
-fi # main if to check if php is already installed
-# Restart Apache
 sudo systemctl restart apache2
-echo "PHP Version: $(php -v | grep -i cli | awk '{print $1 $2}')"
 # check if domain name is not empty
 if [ ! -z "$domain_name" ]; then
 public_dir="/var/www/vhosts/${domain_name}/public/"
@@ -576,3 +528,105 @@ echo "You can access your admin panel at $app_url/admin"
 echo "Your Admin Username is admin@smarterspanel.com"
 echo "Your Admin Password is password"
 echo "You can access your client panel at $app_url/auth/signin"
+
+
+
+# function to check if last command executed successfully or not with message
+function check_last_command_execution {
+if [ $? -eq 0 ]; then
+echo -e "\e[32m$1\e[0m"
+else
+echo -e "\e[31m$2\e[0m"
+exit 1
+fi
+}
+# function to check if last command executed successfully or not without message
+function check_last_command_execution_without_message {
+if [ $? -eq 0 ]; then
+echo -e "\e[32mLast Command Executed Successfully\e[0m"
+else
+echo -e "\e[31mLast Command Execution Failed\e[0m"
+exit 1
+fi
+}
+# function to install apache
+function install_apache {
+# Install Apache
+echo -e "\e[32mInstalling Apache\e[0m"
+sudo apt-get install apache2 -y
+check_last_command_execution "Apache Installed Successfully" "Apache Installation Failed"
+# Enable Apache Mods
+echo -e "\e[32mEnabling Apache Mods\e[0m"
+sudo a2enmod rewrite
+check_last_command_execution "Apache Mods Enabled Successfully" "Apache Mods Enabling Failed"
+# Restart Apache
+echo -e "\e[32mRestarting Apache\e[0m"
+sudo systemctl restart apache2
+check_last_command_execution "Apache Restarted Successfully" "Apache Restarting Failed"
+}
+# function to install mysql with default password
+function install_mysql_with_defined_password(MYSQL_ROOT_PASSWORD) {
+# Install MySQL with default password
+echo -e "\e[32mInstalling MySQL\e[0m"
+sudo debconf-set-selections <<< "mysql-server mysql-server/root_password password $MYSQL_ROOT_PASSWORD"
+sudo debconf-set-selections <<< "mysql-server mysql-server/root_password_again password $MYSQL_ROOT_PASSWORD"
+sudo apt-get install mysql-server -y
+check_last_command_execution "MySQL Installed with Password: $MYSQL_ROOT_PASSWORD" "MySQL Installation Failed"
+echo "MySQL Version: $(mysql -V | awk '{print $1,$2,$3}')"
+}
+# function to create database and database user
+function create_database_and_database_user(MYSQL_ROOT_PASSWORD){
+# Create a database for the domain name provided by the user
+echo -e "\e[32mCreating Database and DB User\e[0m"
+database_name="smarterspanel_db";
+# create database if not exists
+mysql -u root -p$MYSQL_ROOT_PASSWORD -e "CREATE DATABASE IF NOT EXISTS $database_name;"
+check_last_command_execution "Database $database_name Created Successfully" "Database $database_name Creation Failed"
+# show databases
+echo "Showing Databases"
+mysql -u root -p$MYSQL_ROOT_PASSWORD -e "show databases;"
+# Generating Random Username and Password for Database User
+database_user="$(openssl rand -base64 12)"
+# Create a database user for the domain name provided by the user
+database_user_password="$(openssl rand -base64 12)"
+mysql -u root -p$MYSQL_ROOT_PASSWORD -e "CREATE USER '$database_user'@'localhost' IDENTIFIED BY '$database_user_password';"
+# Grant privileges to the database user
+mysql -u root -p$MYSQL_ROOT_PASSWORD -e "GRANT ALL PRIVILEGES ON $database_name.* TO '$database_user'@'localhost';"
+# Flush privileges
+mysql -u root -p$MYSQL_ROOT_PASSWORD -e "FLUSH PRIVILEGES;"
+check_last_command_execution "Database User Created Successfully" "Database User Creation Failed"
+echo "*************** Database Details ******************"
+echo "Database Name: $database_name"
+echo "Database User: $database_user"
+echo "Database User Password: $database_user_password"
+}
+# function to install php and modules with desired version
+function install_php_with_desired_version(desired_version) {
+# installed desired version of php
+echo -e "\e[32mInstalling PHP $desired_version\e[0m"
+sudo apt-get install software-properties-common -y
+sudo add-apt-repository ppa:ondrej/php -y
+sudo apt-get update -y
+sudo apt-get install php$desired_version -y
+sudo apt install unzip
+sudo apt-get install php$desired_version-{bcmath,bz2,intl,gd,mbstring,mysql,zip,curl,xml,cli} -y
+
+}
+# function to remove mysql completely
+function remove_mysql_completely {
+# remove mysql completely
+echo "Removing MySQL completely with configuration files"
+sudo service mysql stop
+sudo apt purge mysql-server mysql-client mysql-common -y
+sudo apt autoremove -y
+sudo rm -rf /etc/mysql
+sudo rm -rf /var/lib/mysql
+check_last_command_execution "MySQL Removed Completely" "MySQL Removal Failed"
+}
+
+
+
+
+
+
+
