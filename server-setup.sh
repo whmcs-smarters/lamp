@@ -203,20 +203,22 @@ sudo systemctl restart apache2
 if [ -d "$document_root/vendor" ]; then
 # git pull
 echo "Updating the Smarters Panel"
-cd /root 
+cd $document_root
+rm -rf smarterpanel-base
 git clone https://techsmarters${repo_pass}@bitbucket.org/techsmarters8333/smarterpanel-base.git
 rsync -av smarterpanel-base $document_root
 rm -rf smarterpanel-base
 else
+cd $document_root
 # remove existing files
 rm -rf *
 git clone https://techsmarters${repo_pass}@bitbucket.org/techsmarters8333/smarterpanel-base.git
-mv -f smarterpanel-base/* $larave_dir
+mv -rf smarterpanel-base/* $document_root
 rm -rf smarterpanel-base
 # create .env file
 echo "Creating .env file"
-sudo truncate -s 0 $larave_dir/.env
-cat >> $larave_dir/.env <<EOF
+sudo truncate -s 0 $document_root/.env
+cat >> $document_root/.env <<EOF
 APP_NAME="Smarters Panel"
 APP_ENV=local
 APP_KEY=base64:4OhoU51Pl13TVLJb6l2ngm7p9QyVH2yOwmE7Gd5Qm/E=
@@ -254,8 +256,8 @@ PUSHER_APP_KEY=
 PUSHER_APP_SECRET=
 QUEUE_CONNECTION=database
 EOF
-sudo chown -R www-data:www-data $larave_dir
-sudo chmod -R 755 $larave_dir
+sudo chown -R www-data:www-data $document_root
+sudo chmod -R 755 $document_root
 cd ~
 # install composer with no interaction
 echo "Installing Composer"
@@ -263,7 +265,7 @@ curl -sS https://getcomposer.org/installer -o /tmp/composer-setup.php
 HASH=`curl -sS https://composer.github.io/installer.sig`
 php -r "if (hash_file('SHA384', '/tmp/composer-setup.php') === '$HASH') { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); } echo PHP_EOL;"
 sudo php /tmp/composer-setup.php --install-dir=/usr/local/bin --filename=composer --version=2.1.8 --quiet --no-interaction 
-cd $larave_dir
+cd $document_root
 # install composer
 composer install --no-interaction
 # check if composer install successfully
@@ -285,7 +287,7 @@ else
 echo -e "\e[31mNodeJS Installation Failed\e[0m"
 exit 1
 fi
-cd $larave_dir
+cd $document_root
 npm install 
 # check if npm install successfully
 if [ $? -eq 0 ]; then
@@ -305,17 +307,17 @@ exit 1
 fi
 php artisan key:generate
 # primission to laravel storage
-sudo chmod -R 777 $larave_dir/storage
+sudo chmod -R 777 $document_root/storage
 # primission to laravel bootstrap
-sudo chmod -R 777 $larave_dir/bootstrap
+sudo chmod -R 777 $document_root/bootstrap
 # primission to laravel cache
-sudo chmod -R 777 $larave_dir/bootstrap/cache
-sudo chmod -R 777 $larave_dir/storage/logs/
+sudo chmod -R 777 $document_root/bootstrap/cache
+sudo chmod -R 777 $document_root/storage/logs/
 # run migration
 php artisan migrate 
 # run seeder
 # check if laravel vendor folder exist
-if [ -d "$larave_dir/vendor" ]; then
+if [ -d "$document_root/vendor" ]; then
 php artisan db:seed
 fi
 # run artisan key generate
