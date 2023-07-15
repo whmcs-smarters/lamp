@@ -205,10 +205,13 @@ fi
 fi
 # check if PHP is already installed
 desired_version="8.1"
-php=$(dpkg-query -W -f='${Status}' php 2>/dev/null | grep -c "ok installed")
-if [ $php -eq 1 ]; then
-echo -e "\e[32mPHP is already installed\e[0m"
-echo "checking PHP version"
+#check php is installed or not
+php_path=$(which php)
+if [ -x "$php_path" ]; then
+echo "PHP is installed at: $php_path"
+php_version=$(php -v | head -n 1 | cut -d ' ' -f 2)
+echo "PHP version: $php_version"
+echo "Comparing PHP version"
 php_version=$(php -r 'echo PHP_VERSION;')
 if [[ $php_version == *"$desired_version"* ]]; then
 echo -e "\e[32mPHP Version is $php_version\e[0m"
