@@ -16,29 +16,6 @@ done
 echo -e "\033[33mLogging the script into server-setup.log\e[0m"
 exec > >(tee -i server-setup.log)
 exec 2>&1
-
-# check if domain name with -d  option is provided or not
-echo -e "Checking if domain name is provided by user with -d option"
-if [ ! -z "$domain_name" ]; then
-input=$domain_name
-# Split the input into an array using dot as the delimiter
-IFS='.' read -ra parts <<< "$input"
-# Check the number of parts in the input
-num_parts=${#parts[@]}
-if [[ $num_parts -gt 2 ]]; then
-    # The input is a subdomain and bold it
-    echo -e " The input \033[97;44;1m $input \033[m is a subdomain."
-    isSubdomain=true
-elif [[ $num_parts -eq 2 ]]; then
-    echo -e "The input \033[97;44;1m $input \033[m is a domain."
-    isSubdomain=false
-else
-    echo -e "\033[1;31mInvalid Input:\033[0m\033[97;44;1m $domain_name \033[m.\033[1;31mPlease provide a valid domain or subdomain.\033[0m"
-    exit 1
-fi
-else
-echo -e "\033[33mDomain name is not provided by user with -d option\033[0m"
-fi
 # check if repo password is provided or not
 echo -e "Checking if repo password is provided by user with -p option"
 if [ -z "$repo_pass" ]
@@ -166,9 +143,7 @@ else # mysql_root_pass if condition empty or not
 MYSQL_ROOT_PASSWORD="$(openssl rand -base64 12)"
 install_mysql_with_defined_password $MYSQL_ROOT_PASSWORD
 create_database_and_database_user $MYSQL_ROOT_PASSWORD
-fi # mysql_root_pass if condition
-
-
+fi # mysql_root_pass if condition empty or not
 # Install PHP
 # check if PHP is already installed
 desired_version="8.1"
@@ -198,50 +173,23 @@ sudo a2enmod php$desired_version
 sudo service apache2 restart
 sudo update-alternatives --set php /usr/bin/php$desired_version
 sudo systemctl restart apache2
-# check if domain name is not empty
+echo -e "Checking if domain name is provided by user with -d option"
 if [ ! -z "$domain_name" ]; then
-public_dir="/var/www/vhosts/${domain_name}/public/"
-larave_dir="/var/www/vhosts/${domain_name}/"
-app_url="http://${domain_name}"
-# Create Virtual Host for the domain name provided by the user
-echo "Creating Virtual Host File for $domain_name"
-# check if already virtual host file exists
-if [ -f "/etc/apache2/sites-available/${domain_name}.conf" ]; then
-echo -e "\e[32mVirtual Host File Already Exists\e[0m"
+echo -e "\e[32mDomain Name is provided by user with -d option\e[0m"
+create_virtual_host $domain_name
+app_url="http://$domain_name"
+# Free SSL Letsencrypt Installing...
+echo "Free SSL Letsencrypt Installing..."
+if [ -f "/etc/letsencrypt/live/${domain_name}/fullchain.pem" ]; then
+echo -e "\e[32mSSL Certificate already exists\e[0m"
 else
-echo -e "\e[32mCreating Virtual Host File\e[0m"
-if [ "$isSubdomain" = true ] ; then
-cat >> /etc/apache2/sites-available/${domain_name}.conf <<EOF
-<VirtualHost *:80>
-<Directory /var/www/vhosts/${domain_name}/public>
-        Options Indexes FollowSymLinks
-        AllowOverride All
-        Require all granted
-     </Directory>
-    ServerAdmin webmaster@${domain_name}
-    ServerName ${domain_name}
-    DocumentRoot /var/www/vhosts/${domain_name}/public/
-    ErrorLog \${APACHE_LOG_DIR}/error.log
-    CustomLog \${APACHE_LOG_DIR}/access.log combined
-</VirtualHost>
-EOF
-else
-cat >> /etc/apache2/sites-available/${domain_name}.conf <<EOF
-<VirtualHost *:80>
-<Directory /var/www/vhosts/${domain_name}/public>
-        Options Indexes FollowSymLinks
-        AllowOverride All
-        Require all granted
-     </Directory>
-    ServerAdmin webmaster@${domain_name}
-    ServerName ${domain_name}
-    ServerAlias www.${domain_name}
-    DocumentRoot /var/www/vhosts/${domain_name}/public/
-    ErrorLog \${APACHE_LOG_DIR}/error.log
-    CustomLog \${APACHE_LOG_DIR}/access.log combined
-</VirtualHost>
-EOF
+installSSL $domain_name
 fi
+else
+echo -e "\e[32mDomain Name is not provided by user with option -d So, we are installing with IP Address\e[0m"
+domain_name = $(curl -s http://checkip.amazonaws.com)
+create_virtual_host $domain_name
+app_url="http://$domain_name"
 fi
 # Enable the virtual host
 sudo a2ensite $domain_name.conf
@@ -249,143 +197,15 @@ sudo a2ensite $domain_name.conf
 sudo a2dissite 000-default.conf
 # Restart Apache
 sudo systemctl restart apache2
-echo "Virtual Host Created Successfully for $domain_name"
-echo "Virtual Host Configuration Script Completed"
-echo "*************** Virtual Host Details ******************"
-echo "Domain Name: $domain_name"
-echo "Public Directory: $public_dir"
-echo "*******************************************************"
-# Create public directory
-echo "Creating public directory"
-sudo mkdir -p $public_dir
-sudo chown -R $USER:$USER $public_dir
-sudo chmod -R 755 $public_dir
-# create a php file to test PHP
-echo "Creating index.php file to welcome message"
-sudo echo "<?php echo 'Welcome to $domain_name'; ?>" > $public_dir/index.php
-sudo echo "<?php phpinfo(); ?>" > $public_dir/info.php
-########## Install Let's Encrypt SSL Certificate for the domain name provided by the user ##########
-echo "Installing SSL Certificate"
-# Update the repository
-#echo "Updating the repository"
-#sudo apt-get update -y
-echo "Installing Certbot"
-# if already certbot is installed and running
-certbot=$(dpkg-query -W -f='${Status}' certbot 2>/dev/null | grep -c "ok installed")
-if [ $certbot -eq 1 ]; then
-echo -e "\e[32mCertbot is already installed\e[0m"
-# check if certbot is running
-certbot_status=$(systemctl is-active certbot.service)
-if [[ $certbot_status == *"active"* ]]; then
-echo -e "\e[32mCertbot is running\e[0m"
-else
-echo -e "\e[31mCertbot is not running\e[0m"
-echo -e "\e[32mStarting Certbot\e[0m"
-sudo systemctl start certbot.service
-if [ $? -eq 0 ]; then
-echo -e "\e[32mCertbot started successfully\e[0m"
-else
-echo -e "\e[31mFailed to start Certbot\e[0m"
-echo -e "\e[32mDeleting Existing Certbot\e[0m"
-sudo apt-get remove certbot python3-certbot-apache -y
-echo -e "\e[32mExisting Certbot Deleted Successfully\e[0m"
-fi
-fi
-else
-echo -e "\e[31mCertbot is not installed\e[0m"
-# Install Certbot
-sudo apt-get install certbot python3-certbot-apache -y
-echo -e "\e[32mCertbot Installed Successfully\e[0m"
-fi
-# Install SSL Certificate
-echo "Installing SSL Certificate for $domain_name"
-# check if ssl certificate already exists
-if [ -f "/etc/letsencrypt/live/${domain_name}/fullchain.pem" ]; then
-echo -e "\e[32mSSL Certificate already exists\e[0m"
-# check https is enabled or not
-echo "Checking if SSL is enabled"
-if grep -q "SSLEngine on" /etc/apache2/sites-available/${domain_name}.conf; then
-echo -e "\e[32mSSL is already enabled\e[0m"
-else
-echo -e "\e[32mEnabling SSL\e[0m"
-# Enable SSL
-sudo a2enmod ssl
-# Restart Apache
-sudo systemctl restart apache2
-fi
-else
-# Enable SSL
-echo "Enabling SSL"
-sudo a2enmod ssl
-# Restart Apache
-sudo systemctl restart apache2
-# Install SSL Certificate with www and non-www domain name and without email address
-if [ "$isSubdomain" = true ] ; then
-sudo certbot --apache -d $domain_name --register-unsafely-without-email --agree-tos -n
-else
-sudo certbot --apache -d $domain_name -d www.$domain_name --register-unsafely-without-email --agree-tos -n 
-fi
-# check if ssl certificate installed successfully
-if [ $? -eq 0 ]; then
-echo -e "\e[32mSSL Certificate Installed Successfully\e[0m"
-app_url="https://$domain_name"
-else
-echo -e "\e[31mFailed to Install SSL Certificate\e[0m"
-app_url="http://$domain_name"
-fi
-fi
-else
-echo -e "\e[32mDomain Name is not provided by user with option -d So, we are installing with IP Address\e[0m"
-public_dir="/var/www/html/public/"
-larave_dir="/var/www/html/"
-ip_address=$(curl -s http://checkip.amazonaws.com)
-app_url="http://$ip_address"
-# get ip address
-# check if ip address is empty
-if [ -z "$ip_address" ]; then
-echo -e "\e[31mIP Address is Empty\e[0m"
-exit 1
-else
-echo -e "\e[32mIP Address: $ip_address\e[0m"
-domain_name=$ip_address
-fi
-echo "Creating Virtual Host fro default /var/www/html/ directory"
-# Create virtual host configuration file
-echo "Creating virtual host configuration file"
-# empty the file
-sudo truncate -s 0 /etc/apache2/sites-available/001-default.conf
-cat >> /etc/apache2/sites-available/001-default.conf <<EOF
-<VirtualHost *:80>
-<Directory /var/www/html/public/>
-        Options Indexes FollowSymLinks
-        AllowOverride All
-        Require all granted
-     </Directory>
-    ServerAdmin webmaster@localhost
-    ServerName localhost
-    DocumentRoot /var/www/html/public/
-    ErrorLog \${APACHE_LOG_DIR}/error.log
-    CustomLog \${APACHE_LOG_DIR}/access.log combined
-</VirtualHost>
-EOF
- # enable the virtual host
-echo "Enabling the virtual host"
-sudo a2ensite 000-default.conf
-sudo a2ensite 001-default.conf
-# Restart Apache
-echo "Restarting Apache"
-sudo systemctl restart apache2
-fi
-########## Install Smarters Panel ##########
-# Install the Smarters Panel on your server
-echo "######################Installing the Smarters Panel on your server######################"
-cd $larave_dir
+# check if virtual host created successfully  and enable site
+
 # check if laravel is installed already or not
-if [ -f "$larave_dir/composer.json" ]; then
+if [ -d "$document_root/vendor" ]; then
 # git pull
 echo "Updating the Smarters Panel"
+cd /root 
 git clone https://techsmarters${repo_pass}@bitbucket.org/techsmarters8333/smarterpanel-base.git
-mv -f smarterpanel-base/* $larave_dir
+rsync -av smarterpanel-base $document_root
 rm -rf smarterpanel-base
 else
 # remove existing files
@@ -610,7 +430,6 @@ sudo apt-get update -y
 sudo apt-get install php$desired_version -y
 sudo apt install unzip
 sudo apt-get install php$desired_version-{bcmath,bz2,intl,gd,mbstring,mysql,zip,curl,xml,cli} -y
-
 }
 # function to remove mysql completely
 function remove_mysql_completely {
@@ -623,10 +442,72 @@ sudo rm -rf /etc/mysql
 sudo rm -rf /var/lib/mysql
 check_last_command_execution "MySQL Removed Completely" "MySQL Removal Failed"
 }
-
-
-
-
-
-
-
+function create_virtual_host(domain_name) {
+# Define the variables
+document_root="/var/www/$domain_name"
+# Create the document root directory
+mkdir -p "$document_root"
+sudo chown -R www-data:www-data $document_root
+sudo chmod -R 755 $document_root
+# Create the virtual host file
+virtual_host_file="/etc/apache2/sites-available/$domain_name.conf"
+sudo truncate -s 0 "$virtual_host_file"
+cat << EOF > "$virtual_host_file"
+<VirtualHost *:80>
+    ServerName $domain_name
+    DocumentRoot $document_root/public/
+    <Directory $document_root/public/>
+        Options Indexes FollowSymLinks
+        AllowOverride All
+        Require all granted
+    </Directory>
+    ErrorLog \${APACHE_LOG_DIR}/error.log
+    CustomLog \${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>
+EOF
+# Enable the virtual host
+a2ensite "$domain_name.conf"
+# Restart Apache
+systemctl restart apache2
+echo "Creating index.php file to welcome message"
+sudo echo "<?php echo 'Welcome to $domain_name'; ?>" > $document_root/public/index.php
+echo "Virtual host for $domain_name created successfully!"
+}
+# function to check domain or sub domain
+function check_domain(domain_name)
+input=$domain_name
+# Split the input into an array using dot as the delimiter
+IFS='.' read -ra parts <<< "$input"
+# Check the number of parts in the input
+num_parts=${#parts[@]}
+if [[ $num_parts -gt 2 ]]; then
+    # The input is a subdomain and bold it
+    echo -e " The input \033[97;44;1m $input \033[m is a subdomain."
+    isSubdomain=true
+elif [[ $num_parts -eq 2 ]]; then
+    echo -e "The input \033[97;44;1m $input \033[m is a domain."
+    isSubdomain=false
+else
+    echo -e "\033[1;31mInvalid Input:\033[0m\033[97;44;1m $domain_name \033[m.\033[1;31mPlease provide a valid domain or subdomain.\033[0m"
+    exit 1
+fi
+function installSSL($domain_name){
+echo "Installing Certbot first."
+sudo apt-get install certbot python3-certbot-apache -y
+check_last_command_execution "Certbot Installed Successfully" "Failed Certbot Installation"
+sudo a2enmod ssl
+sudo systemctl restart apache2
+if [ "$isSubdomain" = true ] ; then
+sudo certbot --apache -d $domain_name --register-unsafely-without-email --agree-tos -n
+else
+sudo certbot --apache -d $domain_name -d www.$domain_name --register-unsafely-without-email --agree-tos -n 
+fi
+# check if ssl certificate installed successfully
+if [ $? -eq 0 ]; then
+echo -e "\e[32mSSL Certificate Installed Successfully\e[0m"
+app_url="https://$domain_name"
+else
+echo -e "\e[31mFailed to Install SSL Certificate\e[0m"
+app_url="http://$domain_name"
+fi
+}
