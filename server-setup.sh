@@ -416,7 +416,6 @@ EOF
  # enable the virtual host
 echo "Enabling the virtual host"
 sudo a2ensite 001-default.conf
-sudo a2dissite 000-default.conf
 # Restart Apache
 echo "Restarting Apache"
 sudo systemctl restart apache2
@@ -500,7 +499,8 @@ echo -e "\e[31mComposer Installation Failed\e[0m"
 exit 1
 fi
 # install nodejs
-sudo apt-get install nodejs -y
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt-get install -y nodejs
 # check if nodejs install successfully
 if [ $? -eq 0 ]; then
 echo -e "\e[32mNodeJS Installed Successfully\e[0m"
@@ -509,18 +509,8 @@ else
 echo -e "\e[31mNodeJS Installation Failed\e[0m"
 exit 1
 fi
-# install npm 
-sudo apt-get install npm -y
-npm install -g npm@latest
-# check if npm install successfully
-if [ $? -eq 0 ]; then
-echo -e "\e[32mNPM Installed Successfully\e[0m"
-else
-echo -e "\e[32mNPM Installation Failed\e[0m"
-fi
-# npm install 
-cd /var/www/vhosts/${domain_name}/
-npm install
+cd $larave_dir
+npm install 
 # check if npm install successfully
 if [ $? -eq 0 ]; then
 echo -e "\e[32mNPM Installed Successfully\e[0m"
@@ -558,13 +548,13 @@ fi
 if [ $? -eq 0 ]; then
 echo -e "\e[32mMigration Successfully\e[0m"
 else
-echo -e "\e[31mMigration Failed\e[0m"
+echo -e "\e[32mMigration Failed\e[0m"
 fi
 # check if seeder successfully
 if [ $? -eq 0 ]; then
 echo -e "\e[32mSeeder Successfully\e[0m"
 else
-echo -e "\e[31mSeeder Failed\e[0m"
+echo -e "\e[32mSeeder Failed\e[0m"
 fi
 # run artisan optimize 
 php artisan optimize:clear
@@ -572,7 +562,7 @@ php artisan optimize:clear
 if [ $? -eq 0 ]; then
 echo -e "\e[32mArtisan Optimize Successfully\e[0m"
 else
-echo -e "\e[31mArtisan Optimize Failed\e[0m"
+echo -e "\e[32mArtisan Optimize Failed\e[0m"
 fi
 
 echo -e "\e[32mSmarters Panel Installed Successfully\e[0m"
