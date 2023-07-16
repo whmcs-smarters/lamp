@@ -497,15 +497,12 @@ sudo chmod -R 777 $document_root/bootstrap
 # primission to laravel cache
 sudo chmod -R 777 $document_root/bootstrap/cache
 sudo chmod -R 777 $document_root/storage/logs/
-# run migration
-php artisan migrate 
-# run seeder
 # check if laravel vendor folder exist
 if [ -d "$document_root/vendor" ]; then
 php artisan db:seed
 fi
-# run artisan key generate
 fi
+php artisan migrate 
 # run artisan optimize 
 php artisan optimize:clear
 # check if artisan optimize successfully
