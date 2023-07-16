@@ -140,7 +140,20 @@ install_mysql_with_defined_password $MYSQL_ROOT_PASSWORD
 create_database_and_database_user $MYSQL_ROOT_PASSWORD
 fi # main if to check if mysql is already installed
 else # mysql_root_pass if condition empty or not
+echo -e "\e[32mInstalling MySQL\e[0m"
 MYSQL_ROOT_PASSWORD="$(openssl rand -base64 12)"
+# check if it's already installed
+mysql=$(dpkg-query -W -f='${Status}' mysql-server 2>/dev/null | grep -c "ok installed")
+if [ $mysql -eq 1 ]; then
+echo -e "\e[32mMySQL is already installed\e[0m"
+# remove mysql completely
+echo "Removing MySQL completely with configuration files"
+# call function to remove mysql completely
+remove_mysql_completely
+# call function to install mysql with defined password
+install_mysql_with_defined_password $MYSQL_ROOT_PASSWORD
+create_database_and_database_user $MYSQL_ROOT_PASSWORD
+else
 install_mysql_with_defined_password $MYSQL_ROOT_PASSWORD
 create_database_and_database_user $MYSQL_ROOT_PASSWORD
 fi # mysql_root_pass if condition empty or not
