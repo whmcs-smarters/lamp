@@ -93,7 +93,7 @@ else
 echo -e "Enabling Apache Mods"
 sudo a2enmod rewrite
 # Restart Apache
-echo -e "mRestarting Apache"
+echo -e "Restarting Apache"
 sudo systemctl restart apache2 
 fi
 # Installing MySQL Server with default password
@@ -387,8 +387,9 @@ sudo systemctl restart apache2
 check_last_command_execution "Apache Restarted Successfully" "Apache Restarting Failed"
 }
 # function to install mysql with default password
-function install_mysql_with_defined_password(MYSQL_ROOT_PASSWORD) {
+function install_mysql_with_defined_password {
 # Install MySQL with default password
+MYSQL_ROOT_PASSWORD=$1
 echo -e "\e[32mInstalling MySQL\e[0m"
 sudo debconf-set-selections <<< "mysql-server mysql-server/root_password password $MYSQL_ROOT_PASSWORD"
 sudo debconf-set-selections <<< "mysql-server mysql-server/root_password_again password $MYSQL_ROOT_PASSWORD"
@@ -397,7 +398,8 @@ check_last_command_execution "MySQL Installed with Password: $MYSQL_ROOT_PASSWOR
 echo "MySQL Version: $(mysql -V | awk '{print $1,$2,$3}')"
 }
 # function to create database and database user
-function create_database_and_database_user(MYSQL_ROOT_PASSWORD){
+function create_database_and_database_user {
+MYSQL_ROOT_PASSWORD=$1
 # Create a database for the domain name provided by the user
 echo -e "\e[32mCreating Database and DB User\e[0m"
 database_name="smarterspanel_db";
@@ -423,7 +425,8 @@ echo "Database User: $database_user"
 echo "Database User Password: $database_user_password"
 }
 # function to install php and modules with desired version
-function install_php_with_desired_version(desired_version) {
+function install_php_with_desired_version {
+desired_version=$1
 # installed desired version of php
 echo -e "\e[32mInstalling PHP $desired_version\e[0m"
 sudo apt-get install software-properties-common -y
@@ -444,7 +447,8 @@ sudo rm -rf /etc/mysql
 sudo rm -rf /var/lib/mysql
 check_last_command_execution "MySQL Removed Completely" "MySQL Removal Failed"
 }
-function create_virtual_host(domain_name) {
+function create_virtual_host {
+domain_name=$1
 # Define the variables
 document_root="/var/www/$domain_name"
 # Create the document root directory
@@ -476,8 +480,9 @@ sudo echo "<?php echo 'Welcome to $domain_name'; ?>" > $document_root/public/ind
 echo "Virtual host for $domain_name created successfully!"
 }
 # function to check domain or sub domain
-function check_domain(domain_name)
-input=$domain_name
+function check_domain {
+# Get the input from user
+input=$$1
 # Split the input into an array using dot as the delimiter
 IFS='.' read -ra parts <<< "$input"
 # Check the number of parts in the input
@@ -490,10 +495,12 @@ elif [[ $num_parts -eq 2 ]]; then
     echo -e "The input \033[97;44;1m $input \033[m is a domain."
     isSubdomain=false
 else
-    echo -e "\033[1;31mInvalid Input:\033[0m\033[97;44;1m $domain_name \033[m.\033[1;31mPlease provide a valid domain or subdomain.\033[0m"
+    echo -e "\033[1;31mInvalid Input:\033[0m\033[97;44;1m $input \033[m.\033[1;31mPlease provide a valid domain or subdomain.\033[0m"
     exit 1
 fi
-function installSSL($domain_name){
+}
+function installSSL {
+domain_name=$1
 echo "Installing Certbot first."
 sudo apt-get install certbot python3-certbot-apache -y
 check_last_command_execution "Certbot Installed Successfully" "Failed Certbot Installation"
