@@ -299,7 +299,7 @@ echo -e "\e[31mMySQL is not running\e[0m"
 # remove mysql completely
 echo "Removing MySQL completely with configuration files"
 # call function to remove mysql completely
-remove_mysql_completely();
+remove_mysql_completely
 # call function to install mysql with defined password
 install_mysql_with_defined_password $MYSQL_ROOT_PASSWORD
 create_database_and_database_user $MYSQL_ROOT_PASSWORD
