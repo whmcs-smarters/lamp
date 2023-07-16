@@ -156,6 +156,7 @@ create_database_and_database_user $MYSQL_ROOT_PASSWORD
 else
 install_mysql_with_defined_password $MYSQL_ROOT_PASSWORD
 create_database_and_database_user $MYSQL_ROOT_PASSWORD
+fi 
 fi # mysql_root_pass if condition empty or not
 # Install PHP
 # check if PHP is already installed
