@@ -16,6 +16,178 @@ done
 echo -e "\033[33mLogging the script into server-setup.log\e[0m"
 exec > >(tee -i server-setup.log)
 exec 2>&1
+
+# Functions Declaration
+
+
+# function to check if last command executed successfully or not with message
+function check_last_command_execution {
+if [ $? -eq 0 ]; then
+echo -e "\e[32m$1\e[0m"
+else
+echo -e "\e[31m$2\e[0m"
+exit 1
+fi
+}
+# function to check if last command executed successfully or not without message
+function check_last_command_execution_without_message {
+if [ $? -eq 0 ]; then
+echo -e "\e[32mLast Command Executed Successfully\e[0m"
+else
+echo -e "\e[31mLast Command Execution Failed\e[0m"
+exit 1
+fi
+}
+# function to install apache
+function install_apache {
+# Install Apache
+echo -e "\e[32mInstalling Apache\e[0m"
+sudo apt-get install apache2 -y
+check_last_command_execution "Apache Installed Successfully" "Apache Installation Failed"
+# Enable Apache Mods
+echo -e "\e[32mEnabling Apache Mods\e[0m"
+sudo a2enmod rewrite
+check_last_command_execution "Apache Mods Enabled Successfully" "Apache Mods Enabling Failed"
+# Restart Apache
+echo -e "\e[32mRestarting Apache\e[0m"
+sudo systemctl restart apache2
+check_last_command_execution "Apache Restarted Successfully" "Apache Restarting Failed"
+}
+# function to install mysql with default password
+function install_mysql_with_defined_password {
+# Install MySQL with default password
+MYSQL_ROOT_PASSWORD=$1
+echo -e "\e[32mInstalling MySQL\e[0m"
+sudo debconf-set-selections <<< "mysql-server mysql-server/root_password password $MYSQL_ROOT_PASSWORD"
+sudo debconf-set-selections <<< "mysql-server mysql-server/root_password_again password $MYSQL_ROOT_PASSWORD"
+sudo apt-get install mysql-server -y
+check_last_command_execution "MySQL Installed with Password: $MYSQL_ROOT_PASSWORD" "MySQL Installation Failed"
+echo "MySQL Version: $(mysql -V | awk '{print $1,$2,$3}')"
+}
+# function to create database and database user
+function create_database_and_database_user {
+MYSQL_ROOT_PASSWORD=$1
+# Create a database for the domain name provided by the user
+echo -e "\e[32mCreating Database and DB User\e[0m"
+database_name="smarterspanel_db";
+# create database if not exists
+mysql -u root -p$MYSQL_ROOT_PASSWORD -e "CREATE DATABASE IF NOT EXISTS $database_name;"
+check_last_command_execution "Database $database_name Created Successfully" "Database $database_name Creation Failed"
+# show databases
+echo "Showing Databases"
+mysql -u root -p$MYSQL_ROOT_PASSWORD -e "show databases;"
+# Generating Random Username and Password for Database User
+database_user="$(openssl rand -base64 12)"
+# Create a database user for the domain name provided by the user
+database_user_password="$(openssl rand -base64 12)"
+mysql -u root -p$MYSQL_ROOT_PASSWORD -e "CREATE USER '$database_user'@'localhost' IDENTIFIED BY '$database_user_password';"
+# Grant privileges to the database user
+mysql -u root -p$MYSQL_ROOT_PASSWORD -e "GRANT ALL PRIVILEGES ON $database_name.* TO '$database_user'@'localhost';"
+# Flush privileges
+mysql -u root -p$MYSQL_ROOT_PASSWORD -e "FLUSH PRIVILEGES;"
+check_last_command_execution "Database User Created Successfully" "Database User Creation Failed"
+echo "*************** Database Details ******************"
+echo "Database Name: $database_name"
+echo "Database User: $database_user"
+echo "Database User Password: $database_user_password"
+}
+# function to install php and modules with desired version
+function install_php_with_desired_version {
+desired_version=$1
+# installed desired version of php
+echo -e "\e[32mInstalling PHP $desired_version\e[0m"
+sudo apt-get install software-properties-common -y
+sudo add-apt-repository ppa:ondrej/php -y
+sudo apt-get update -y
+sudo apt-get install php$desired_version -y
+sudo apt install unzip
+sudo apt-get install php$desired_version-{bcmath,bz2,intl,gd,mbstring,mysql,zip,curl,xml,cli} -y
+}
+# function to remove mysql completely
+function remove_mysql_completely {
+# remove mysql completely
+echo "Removing MySQL completely with configuration files"
+sudo service mysql stop
+sudo apt purge mysql-server mysql-client mysql-common -y
+sudo apt autoremove -y
+sudo rm -rf /etc/mysql
+sudo rm -rf /var/lib/mysql
+check_last_command_execution "MySQL Removed Completely" "MySQL Removal Failed"
+}
+function create_virtual_host {
+domain_name=$1
+# Define the variables
+document_root="/var/www/$domain_name"
+# Create the document root directory
+mkdir -p "$document_root"
+sudo chown -R www-data:www-data $document_root
+sudo chmod -R 755 $document_root
+# Create the virtual host file
+virtual_host_file="/etc/apache2/sites-available/$domain_name.conf"
+sudo truncate -s 0 "$virtual_host_file"
+cat << EOF > "$virtual_host_file"
+<VirtualHost *:80>
+    ServerName $domain_name
+    DocumentRoot $document_root/public/
+    <Directory $document_root/public/>
+        Options Indexes FollowSymLinks
+        AllowOverride All
+        Require all granted
+    </Directory>
+    ErrorLog \${APACHE_LOG_DIR}/error.log
+    CustomLog \${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>
+EOF
+# Enable the virtual host
+a2ensite "$domain_name.conf"
+# Restart Apache
+systemctl restart apache2
+echo "Creating index.php file to welcome message"
+sudo echo "<?php echo 'Welcome to $domain_name'; ?>" > $document_root/public/index.php
+echo "Virtual host for $domain_name created successfully!"
+}
+# function to check domain or sub domain
+function check_domain {
+# Get the input from user
+input=$$1
+# Split the input into an array using dot as the delimiter
+IFS='.' read -ra parts <<< "$input"
+# Check the number of parts in the input
+num_parts=${#parts[@]}
+if [[ $num_parts -gt 2 ]]; then
+    # The input is a subdomain and bold it
+    echo -e " The input \033[97;44;1m $input \033[m is a subdomain."
+    isSubdomain=true
+elif [[ $num_parts -eq 2 ]]; then
+    echo -e "The input \033[97;44;1m $input \033[m is a domain."
+    isSubdomain=false
+else
+    echo -e "\033[1;31mInvalid Input:\033[0m\033[97;44;1m $input \033[m.\033[1;31mPlease provide a valid domain or subdomain.\033[0m"
+    exit 1
+fi
+}
+function installSSL {
+domain_name=$1
+echo "Installing Certbot first."
+sudo apt-get install certbot python3-certbot-apache -y
+check_last_command_execution "Certbot Installed Successfully" "Failed Certbot Installation"
+sudo a2enmod ssl
+sudo systemctl restart apache2
+if [ "$isSubdomain" = true ] ; then
+sudo certbot --apache -d $domain_name --register-unsafely-without-email --agree-tos -n
+else
+sudo certbot --apache -d $domain_name -d www.$domain_name --register-unsafely-without-email --agree-tos -n 
+fi
+# check if ssl certificate installed successfully
+if [ $? -eq 0 ]; then
+echo -e "\e[32mSSL Certificate Installed Successfully\e[0m"
+app_url="https://$domain_name"
+else
+echo -e "\e[31mFailed to Install SSL Certificate\e[0m"
+app_url="http://$domain_name"
+fi
+}
+
 # check if repo password is provided or not
 echo -e "Checking if repo password is provided by user with -p option"
 if [ -z "$repo_pass" ]
@@ -127,7 +299,7 @@ echo -e "\e[31mMySQL is not running\e[0m"
 # remove mysql completely
 echo "Removing MySQL completely with configuration files"
 # call function to remove mysql completely
-remove_mysql_completely
+remove_mysql_completely();
 # call function to install mysql with defined password
 install_mysql_with_defined_password $MYSQL_ROOT_PASSWORD
 create_database_and_database_user $MYSQL_ROOT_PASSWORD
@@ -364,173 +536,3 @@ echo "You can access your admin panel at $app_url/admin"
 echo "Your Admin Username is admin@smarterspanel.com"
 echo "Your Admin Password is password"
 echo "You can access your client panel at $app_url/auth/signin"
-
-
-
-# function to check if last command executed successfully or not with message
-function check_last_command_execution {
-if [ $? -eq 0 ]; then
-echo -e "\e[32m$1\e[0m"
-else
-echo -e "\e[31m$2\e[0m"
-exit 1
-fi
-}
-# function to check if last command executed successfully or not without message
-function check_last_command_execution_without_message {
-if [ $? -eq 0 ]; then
-echo -e "\e[32mLast Command Executed Successfully\e[0m"
-else
-echo -e "\e[31mLast Command Execution Failed\e[0m"
-exit 1
-fi
-}
-# function to install apache
-function install_apache {
-# Install Apache
-echo -e "\e[32mInstalling Apache\e[0m"
-sudo apt-get install apache2 -y
-check_last_command_execution "Apache Installed Successfully" "Apache Installation Failed"
-# Enable Apache Mods
-echo -e "\e[32mEnabling Apache Mods\e[0m"
-sudo a2enmod rewrite
-check_last_command_execution "Apache Mods Enabled Successfully" "Apache Mods Enabling Failed"
-# Restart Apache
-echo -e "\e[32mRestarting Apache\e[0m"
-sudo systemctl restart apache2
-check_last_command_execution "Apache Restarted Successfully" "Apache Restarting Failed"
-}
-# function to install mysql with default password
-function install_mysql_with_defined_password {
-# Install MySQL with default password
-MYSQL_ROOT_PASSWORD=$1
-echo -e "\e[32mInstalling MySQL\e[0m"
-sudo debconf-set-selections <<< "mysql-server mysql-server/root_password password $MYSQL_ROOT_PASSWORD"
-sudo debconf-set-selections <<< "mysql-server mysql-server/root_password_again password $MYSQL_ROOT_PASSWORD"
-sudo apt-get install mysql-server -y
-check_last_command_execution "MySQL Installed with Password: $MYSQL_ROOT_PASSWORD" "MySQL Installation Failed"
-echo "MySQL Version: $(mysql -V | awk '{print $1,$2,$3}')"
-}
-# function to create database and database user
-function create_database_and_database_user {
-MYSQL_ROOT_PASSWORD=$1
-# Create a database for the domain name provided by the user
-echo -e "\e[32mCreating Database and DB User\e[0m"
-database_name="smarterspanel_db";
-# create database if not exists
-mysql -u root -p$MYSQL_ROOT_PASSWORD -e "CREATE DATABASE IF NOT EXISTS $database_name;"
-check_last_command_execution "Database $database_name Created Successfully" "Database $database_name Creation Failed"
-# show databases
-echo "Showing Databases"
-mysql -u root -p$MYSQL_ROOT_PASSWORD -e "show databases;"
-# Generating Random Username and Password for Database User
-database_user="$(openssl rand -base64 12)"
-# Create a database user for the domain name provided by the user
-database_user_password="$(openssl rand -base64 12)"
-mysql -u root -p$MYSQL_ROOT_PASSWORD -e "CREATE USER '$database_user'@'localhost' IDENTIFIED BY '$database_user_password';"
-# Grant privileges to the database user
-mysql -u root -p$MYSQL_ROOT_PASSWORD -e "GRANT ALL PRIVILEGES ON $database_name.* TO '$database_user'@'localhost';"
-# Flush privileges
-mysql -u root -p$MYSQL_ROOT_PASSWORD -e "FLUSH PRIVILEGES;"
-check_last_command_execution "Database User Created Successfully" "Database User Creation Failed"
-echo "*************** Database Details ******************"
-echo "Database Name: $database_name"
-echo "Database User: $database_user"
-echo "Database User Password: $database_user_password"
-}
-# function to install php and modules with desired version
-function install_php_with_desired_version {
-desired_version=$1
-# installed desired version of php
-echo -e "\e[32mInstalling PHP $desired_version\e[0m"
-sudo apt-get install software-properties-common -y
-sudo add-apt-repository ppa:ondrej/php -y
-sudo apt-get update -y
-sudo apt-get install php$desired_version -y
-sudo apt install unzip
-sudo apt-get install php$desired_version-{bcmath,bz2,intl,gd,mbstring,mysql,zip,curl,xml,cli} -y
-}
-# function to remove mysql completely
-function remove_mysql_completely {
-# remove mysql completely
-echo "Removing MySQL completely with configuration files"
-sudo service mysql stop
-sudo apt purge mysql-server mysql-client mysql-common -y
-sudo apt autoremove -y
-sudo rm -rf /etc/mysql
-sudo rm -rf /var/lib/mysql
-check_last_command_execution "MySQL Removed Completely" "MySQL Removal Failed"
-}
-function create_virtual_host {
-domain_name=$1
-# Define the variables
-document_root="/var/www/$domain_name"
-# Create the document root directory
-mkdir -p "$document_root"
-sudo chown -R www-data:www-data $document_root
-sudo chmod -R 755 $document_root
-# Create the virtual host file
-virtual_host_file="/etc/apache2/sites-available/$domain_name.conf"
-sudo truncate -s 0 "$virtual_host_file"
-cat << EOF > "$virtual_host_file"
-<VirtualHost *:80>
-    ServerName $domain_name
-    DocumentRoot $document_root/public/
-    <Directory $document_root/public/>
-        Options Indexes FollowSymLinks
-        AllowOverride All
-        Require all granted
-    </Directory>
-    ErrorLog \${APACHE_LOG_DIR}/error.log
-    CustomLog \${APACHE_LOG_DIR}/access.log combined
-</VirtualHost>
-EOF
-# Enable the virtual host
-a2ensite "$domain_name.conf"
-# Restart Apache
-systemctl restart apache2
-echo "Creating index.php file to welcome message"
-sudo echo "<?php echo 'Welcome to $domain_name'; ?>" > $document_root/public/index.php
-echo "Virtual host for $domain_name created successfully!"
-}
-# function to check domain or sub domain
-function check_domain {
-# Get the input from user
-input=$$1
-# Split the input into an array using dot as the delimiter
-IFS='.' read -ra parts <<< "$input"
-# Check the number of parts in the input
-num_parts=${#parts[@]}
-if [[ $num_parts -gt 2 ]]; then
-    # The input is a subdomain and bold it
-    echo -e " The input \033[97;44;1m $input \033[m is a subdomain."
-    isSubdomain=true
-elif [[ $num_parts -eq 2 ]]; then
-    echo -e "The input \033[97;44;1m $input \033[m is a domain."
-    isSubdomain=false
-else
-    echo -e "\033[1;31mInvalid Input:\033[0m\033[97;44;1m $input \033[m.\033[1;31mPlease provide a valid domain or subdomain.\033[0m"
-    exit 1
-fi
-}
-function installSSL {
-domain_name=$1
-echo "Installing Certbot first."
-sudo apt-get install certbot python3-certbot-apache -y
-check_last_command_execution "Certbot Installed Successfully" "Failed Certbot Installation"
-sudo a2enmod ssl
-sudo systemctl restart apache2
-if [ "$isSubdomain" = true ] ; then
-sudo certbot --apache -d $domain_name --register-unsafely-without-email --agree-tos -n
-else
-sudo certbot --apache -d $domain_name -d www.$domain_name --register-unsafely-without-email --agree-tos -n 
-fi
-# check if ssl certificate installed successfully
-if [ $? -eq 0 ]; then
-echo -e "\e[32mSSL Certificate Installed Successfully\e[0m"
-app_url="https://$domain_name"
-else
-echo -e "\e[31mFailed to Install SSL Certificate\e[0m"
-app_url="http://$domain_name"
-fi
-}
