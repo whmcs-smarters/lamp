@@ -149,9 +149,14 @@ if [[ $num_parts -gt 2 ]]; then
     # The input is a subdomain and bold it
     echo -e " The input \033[97;44;1m $input \033[m is a subdomain."
     isSubdomain=true
+    # set isSubdomain to true globally
+    export isSubdomain=true
+
 elif [[ $num_parts -eq 2 ]]; then
     echo -e "The input \033[97;44;1m $input \033[m is a domain."
     isSubdomain=false
+    # set isSubdomain to false globally
+    export isSubdomain=false
 else
     echo -e "\033[1;31mInvalid Input:\033[0m\033[97;44;1m $input \033[m.\033[1;31mPlease provide a valid domain or subdomain.\033[0m"
     exit 1
@@ -481,18 +486,6 @@ if [ -d "$document_root/vendor" ]; then
 php artisan db:seed
 fi
 # run artisan key generate
-fi
-# check if migration successfully
-if [ $? -eq 0 ]; then
-echo -e "\e[32mMigration Successfully\e[0m"
-else
-echo -e "\e[32mMigration Failed\e[0m"
-fi
-# check if seeder successfully
-if [ $? -eq 0 ]; then
-echo -e "\e[32mSeeder Successfully\e[0m"
-else
-echo -e "\e[32mSeeder Failed\e[0m"
 fi
 # run artisan optimize 
 php artisan optimize:clear
