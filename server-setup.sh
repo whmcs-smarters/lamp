@@ -143,7 +143,7 @@ a2ensite "$domain_name.conf"
 # Restart Apache
 systemctl restart apache2
 echo "Creating index.php file to welcome message"
-sudo echo "<?php echo 'Welcome to $domain_name'; ?>" > $document_root/public/index.php
+#sudo echo "<?php echo 'Welcome to $domain_name'; ?>" > $document_root/public/index.php
 echo "Virtual host for $domain_name created successfully!"
 }
 # function to check domain or sub domain
@@ -396,7 +396,7 @@ cd $document_root
 # remove existing files
 rm -rf *
 git clone https://techsmarters${repo_pass}@bitbucket.org/techsmarters8333/smarterpanel-base.git
-mv -rf smarterpanel-base/* $document_root
+mv -f smarterpanel-base/* $document_root
 rm -rf smarterpanel-base
 # create .env file
 echo "Creating .env file"
