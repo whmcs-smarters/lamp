@@ -433,6 +433,7 @@ sudo php /tmp/composer-setup.php --install-dir=/usr/local/bin --filename=compose
 cd $document_root
 # install composer
 composer install --no-interaction
+composer update --no-interaction
 # check if composer install successfully
 if [ $? -eq 0 ]; then
 echo -e "\e[32mComposer Installed Successfully\e[0m"
