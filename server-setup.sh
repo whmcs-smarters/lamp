@@ -29,15 +29,6 @@ echo -e "\e[31m$2\e[0m"
 exit 1
 fi
 }
-# function to check if last command executed successfully or not without message
-function check_last_command_execution_without_message {
-if [ $? -eq 0 ]; then
-echo -e "\e[32mLast Command Executed Successfully\e[0m"
-else
-echo -e "\e[31mLast Command Execution Failed\e[0m"
-exit 1
-fi
-}
 # function to install apache
 function install_apache {
 # Install Apache
@@ -187,6 +178,15 @@ echo -e "\e[31mFailed to Install SSL Certificate\e[0m"
 app_url="http://$domain_name"
 fi
 }
+# function to remove apache completely
+function remove_apache_completely {
+echo "Removing Apache completely with configuration files"
+sudo service apache2 stop
+sudo apt purge apache2 apache2-utils apache2-bin -y
+sudo apt autoremove -y
+sudo rm -rf /etc/apache2
+echo -e "Apache is removed completely"
+}
 
 # check if repo password is provided or not
 echo -e "Checking if repo password is provided by user with -p option"
@@ -215,60 +215,34 @@ echo -e "\e[31mRepository Update Failed\e[0m"
 fi
 # Install Apache, MySQL, PHP
 echo -e "\e[32mInstalling Apache, MySQL, PHP\e[0m"
-# Install Apache
-#check if apache is already installed
-echo -e "Checking if Apache is already installed or not"
+################# Install Apache ##################
+echo "################# Install Apache ##################"
+# check if apache is already installed
 apache=$(dpkg-query -W -f='${Status}' apache2 2>/dev/null | grep -c "ok installed")
 if [ $apache -eq 1 ]; then
-echo -e "\e[32mApache is installed\e[0m"
+echo -e "\e[32mApache is already installed\e[0m"
 # check if apache is running or not
 echo -e "\e[32mChecking if Apache is running or not\e[0m"
 apache_running=$(systemctl status apache2 | grep -c "active (running)")
 if [ $apache_running -eq 1 ]; then
-echo -e "\e[32mApache is running too\e[0m"
-else
-echo -e "\e[31mApache is not running\e[0m"
-echo -e "\e[32mStarting Apache\e[0m"
-sudo systemctl start apache2
-apache_running=$(systemctl status apache2 | grep -c "active (running)")
-if [ $apache_running -eq 1 ]; then
 echo -e "\e[32mApache is running\e[0m"
+#nothing to do as apache is already installed and running
 else
 echo -e "\e[31mApache is not running\e[0m"
-# remove apache completely 
+# remove apache completely
 echo "Removing Apache completely with configuration files"
-sudo service apache2 stop
-sudo apt purge apache2 apache2-utils apache2-bin -y
-sudo apt autoremove -y
-sudo rm -rf /etc/apache2
-echo -e "mApache is removed completely"
-echo -e "\e[32mInstalling Apache\e[0m"
-sudo apt-get install apache2 -y
-# check last command executed successfully or not
-if [ $? -eq 0 ]; then
-echo -e "\e[32mApache is installed successfully\e[0m"
-else
-echo -e "\e[31mApache is not installed successfully\e[0m"
-exit 1
-fi # check last command executed successfully or not
-fi # main if to check if apache is running or not
-fi # main if to check if apache is running or not
-else # main else to check if apache is already installed
-echo -e "\e[32mInstalling Apache\e[0m"
-sudo apt-get install apache2 -y
-fi #main if to check if apache is already installed
-# Enable Apache Mods if not enabled
-enable_mods=$(a2query -m rewrite)
-if [ "$enable_mods" = *"rewrite (enabled by site administrator)"* ]; then
-echo -e "\e[32mApache Mods are already enabled\e[0m"
-else
-echo -e "Enabling Apache Mods"
-sudo a2enmod rewrite
-# Restart Apache
-echo -e "Restarting Apache"
-sudo systemctl restart apache2 
-fi
-# Installing MySQL Server with default password
+# call function to remove apache completely
+remove_apache_completely
+# call function to install apache
+install_apache
+fi # Closed if "Apache is running"
+else # Apache is already installed else condition
+# call function to install apache
+install_apache
+fi # main if to check if apache is already installed
+
+############### Installing MySQL Server ##################
+echo "############### Installing MySQL Server ##################"
 # check if mysql_root_pass is empty or not
 if [ ! -z "$mysql_root_pass" ]; then  
 echo -e "\e[32mInstalling MySQL\e[0m"
@@ -327,7 +301,8 @@ install_mysql_with_defined_password $MYSQL_ROOT_PASSWORD
 create_database_and_database_user $MYSQL_ROOT_PASSWORD
 fi 
 fi # mysql_root_pass if condition empty or not
-# Install PHP
+################### Install PHP ##################
+echo "################### Install PHP ##################"
 # check if PHP is already installed
 desired_version="8.1"
 #check php is installed or not
@@ -361,7 +336,8 @@ if [ ! -z "$domain_name" ]; then
 echo -e "\e[32mDomain Name is provided by user with -d option\e[0m"
 create_virtual_host $domain_name
 app_url="http://$domain_name"
-# Free SSL Letsencrypt Installing...
+################## Free SSL Letsencrypt Installing ##################
+echo "################## Free SSL Letsencrypt Installing ##################"
 echo "Free SSL Letsencrypt Installing..."
 if [ -f "/etc/letsencrypt/live/${domain_name}/fullchain.pem" ]; then
 echo -e "\e[32mSSL Certificate already exists\e[0m"
@@ -381,7 +357,8 @@ sudo a2dissite 000-default.conf
 # Restart Apache
 sudo systemctl restart apache2
 # check if virtual host created successfully  and enable site
-
+echo "########## Installing Smarters Panel #############"
+########## Installing Smarters Panel #############
 # check if laravel is installed already or not
 if [ -d "$document_root/vendor" ]; then
 # git pull
