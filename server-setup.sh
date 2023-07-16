@@ -269,7 +269,6 @@ echo -e "Restarting Apache"
 sudo systemctl restart apache2 
 fi
 # Installing MySQL Server with default password
-echo -e "\e[32mInstalling MySQL\e[0m"
 # check if mysql_root_pass is empty or not
 if [ ! -z "$mysql_root_pass" ]; then  
 echo -e "\e[32mInstalling MySQL\e[0m"
@@ -306,13 +305,11 @@ create_database_and_database_user $MYSQL_ROOT_PASSWORD
 fi # Closed if "Mysql is running now
 fi # Closed if mysql is running or not
 else # MySQL is already installed else condition
-echo -e "\e[32mInstalling MySQL\e[0m"
 # call function to install mysql with defined password
 install_mysql_with_defined_password $MYSQL_ROOT_PASSWORD
 create_database_and_database_user $MYSQL_ROOT_PASSWORD
 fi # main if to check if mysql is already installed
 else # mysql_root_pass if condition empty or not
-echo -e "\e[32mInstalling MySQL\e[0m"
 MYSQL_ROOT_PASSWORD="$(openssl rand -base64 12)"
 # check if it's already installed
 mysql=$(dpkg-query -W -f='${Status}' mysql-server 2>/dev/null | grep -c "ok installed")
@@ -373,7 +370,7 @@ installSSL $domain_name
 fi
 else
 echo -e "\e[32mDomain Name is not provided by user with option -d So, we are installing with IP Address\e[0m"
-domain_name = $(curl -s http://checkip.amazonaws.com)
+domain_name=$(curl -s http://checkip.amazonaws.com)
 create_virtual_host $domain_name
 app_url="http://$domain_name"
 fi
