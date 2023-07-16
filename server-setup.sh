@@ -140,7 +140,7 @@ echo "Virtual host for $domain_name created successfully!"
 # function to check domain or sub domain
 function check_domain {
 # Get the input from user
-input=$$1
+input=$1
 # Split the input into an array using dot as the delimiter
 IFS='.' read -ra parts <<< "$input"
 # Check the number of parts in the input
@@ -169,6 +169,24 @@ sudo apt-get install certbot python3-certbot-apache -y
 check_last_command_execution "Certbot Installed Successfully" "Failed Certbot Installation"
 sudo a2enmod ssl
 sudo systemctl restart apache2
+# Split the input into an array using dot as the delimiter
+IFS='.' read -ra parts <<< "$domain_name"
+# Check the number of parts in the input
+num_parts=${#parts[@]}
+if [[ $num_parts -gt 2 ]]; then
+    # The input is a subdomain and bold it
+    echo -e " The input \033[97;44;1m $domain_name \033[m is a subdomain."
+    isSubdomain=true
+
+elif [[ $num_parts -eq 2 ]]; then
+    echo -e "The input \033[97;44;1m $domain_name \033[m is a domain."
+    isSubdomain=false
+ 
+
+else
+    echo -e "\033[1;31mInvalid Input:\033[0m\033[97;44;1m $domain_name \033[m.\033[1;31mPlease provide a valid domain or subdomain.\033[0m"
+    exit 1
+fi
 if [ "$isSubdomain" = true ] ; then
 sudo certbot --apache -d $domain_name --register-unsafely-without-email --agree-tos -n
 else
@@ -433,7 +451,7 @@ sudo php /tmp/composer-setup.php --install-dir=/usr/local/bin --filename=compose
 cd $document_root
 # install composer
 composer install --no-interaction
-composer update --no-interaction
+#composer update --no-interaction
 # check if composer install successfully
 if [ $? -eq 0 ]; then
 echo -e "\e[32mComposer Installed Successfully\e[0m"
