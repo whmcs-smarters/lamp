@@ -501,12 +501,11 @@ sudo chmod -R 777 $document_root/bootstrap
 # primission to laravel cache
 sudo chmod -R 777 $document_root/bootstrap/cache
 sudo chmod -R 777 $document_root/storage/logs/
-# check if laravel vendor folder exist
+fi
+php artisan migrate 
 if [ -d "$document_root/vendor" ]; then
 php artisan db:seed
 fi
-fi
-php artisan migrate 
 # run artisan optimize 
 php artisan optimize:clear
 # check if artisan optimize successfully
