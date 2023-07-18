@@ -385,21 +385,31 @@ echo "########## Installing Smarters Panel #############"
 # check if laravel is installed already or not
 # check vendor and node modules folder exists or not
 if [ -d "$document_root/vendor" ] && [ -d "$document_root/node_modules" ]; then
-echo -e "\e[32mLaravel is already installed\e[0m"
+echo -e "\e[32mSmarters Panel already installed\e[0m"
 # git pull
 echo "Updating the Smarters Panel"
 cd $document_root
 # rm -rf smarterpanel-base
 git pull origin Smarters-Panel-Base
+if [ $? -eq 0 ]; then
+echo -e "\e[32mSmarters Panel updated successfully\e[0m"
+else
+echo -e "\e[31mSmarters Panel updating failed\e[0m"
+fi
 #git clone https://techsmarters${repo_pass}@bitbucket.org/techsmarters8333/smarterpanel-base.git
 # rsync -av smarterpanel-base $document_root
 # rm -rf smarterpanel-base
 else
 cd $document_root
 # remove existing files
-rm -rf *
+rm -rf $document_root/.* 2> /dev/null # remove hidden files
 # git clone https://techsmarters${repo_pass}@bitbucket.org/techsmarters8333/smarterpanel-base.git
 git clone git@bitbucket.org:techsmarters8333/smarterpanel-base.git .
+if [ $? -eq 0 ]; then
+echo -e "\e[32mSmarters Panel clonned successfully\e[0m"
+else
+echo -e "\e[31mSmarters Panel clonning failed\e[0m"
+fi
 # mv -f smarterpanel-base/* $document_root
 # rm -rf smarterpanel-base
 # create .env file
@@ -494,13 +504,6 @@ echo -e "\e[31mNPM Run Dev Failed\e[0m"
 exit 1
 fi
 php artisan key:generate
-# primission to laravel storage
-sudo chmod -R 777 $document_root/storage
-# primission to laravel bootstrap
-sudo chmod -R 777 $document_root/bootstrap
-# primission to laravel cache
-sudo chmod -R 777 $document_root/bootstrap/cache
-sudo chmod -R 777 $document_root/storage/logs/
 fi
 php artisan migrate
 # check if artisan migrate successfully
@@ -514,6 +517,13 @@ fi
 if [ ! -f "$document_root/composer.json" ] && [ ! -d "$document_root/node_modules" ]; then
 php artisan db:seed
 fi
+# primission to laravel storage
+sudo chmod -R 777 $document_root/storage
+# primission to laravel bootstrap
+sudo chmod -R 777 $document_root/bootstrap
+# primission to laravel cache
+sudo chmod -R 777 $document_root/bootstrap/cache
+sudo chmod -R 777 $document_root/storage/logs/
 # run artisan optimize 
 php artisan optimize:clear
 # check if artisan optimize successfully
