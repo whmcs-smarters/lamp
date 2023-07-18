@@ -399,9 +399,9 @@ cd $document_root
 # remove existing files
 rm -rf *
 # git clone https://techsmarters${repo_pass}@bitbucket.org/techsmarters8333/smarterpanel-base.git
-git clone git@bitbucket.org:techsmarters8333/smarterpanel-base.git
-mv -f smarterpanel-base/* $document_root
-rm -rf smarterpanel-base
+git clone git@bitbucket.org:techsmarters8333/smarterpanel-base.git .
+# mv -f smarterpanel-base/* $document_root
+# rm -rf smarterpanel-base
 # create .env file
 echo "Creating .env file"
 sudo truncate -s 0 $document_root/.env
@@ -502,8 +502,16 @@ sudo chmod -R 777 $document_root/bootstrap
 sudo chmod -R 777 $document_root/bootstrap/cache
 sudo chmod -R 777 $document_root/storage/logs/
 fi
-php artisan migrate 
-if [ -d "$document_root/vendor" ]; then
+php artisan migrate
+# check if artisan migrate successfully
+if [ $? -eq 0 ]; then
+echo -e "\e[32mArtisan Migrate Successfully\e[0m"
+else
+echo -e "\e[31mArtisan Migrate Failed\e[0m"
+exit 1
+fi
+# check if laravel is installed successfully
+if [ ! -f "$document_root/composer.json" ] && [ ! -d "$document_root/node_modules" ]; then
 php artisan db:seed
 fi
 # run artisan optimize 
@@ -514,7 +522,6 @@ echo -e "\e[32mArtisan Optimize Successfully\e[0m"
 else
 echo -e "\e[32mArtisan Optimize Failed\e[0m"
 fi
-
 echo -e "\e[32mSmarters Panel Installed Successfully\e[0m"
 # show user the panel url
 echo "You can access your smarters panel at $app_url"
