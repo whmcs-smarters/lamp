@@ -383,19 +383,23 @@ sudo systemctl restart apache2
 echo "########## Installing Smarters Panel #############"
 ########## Installing Smarters Panel #############
 # check if laravel is installed already or not
-if [ -d "$document_root/vendor" ]; then
+# check vendor and node modules folder exists or not
+if [ -d "$document_root/vendor" ] && [ -d "$document_root/node_modules" ]; then
+echo -e "\e[32mLaravel is already installed\e[0m"
 # git pull
 echo "Updating the Smarters Panel"
 cd $document_root
-rm -rf smarterpanel-base
-git clone https://techsmarters${repo_pass}@bitbucket.org/techsmarters8333/smarterpanel-base.git
-rsync -av smarterpanel-base $document_root
-rm -rf smarterpanel-base
+# rm -rf smarterpanel-base
+git pull origin Smarters-Panel-Base
+#git clone https://techsmarters${repo_pass}@bitbucket.org/techsmarters8333/smarterpanel-base.git
+# rsync -av smarterpanel-base $document_root
+# rm -rf smarterpanel-base
 else
 cd $document_root
 # remove existing files
 rm -rf *
-git clone https://techsmarters${repo_pass}@bitbucket.org/techsmarters8333/smarterpanel-base.git
+# git clone https://techsmarters${repo_pass}@bitbucket.org/techsmarters8333/smarterpanel-base.git
+git clone git@bitbucket.org:techsmarters8333/smarterpanel-base.git
 mv -f smarterpanel-base/* $document_root
 rm -rf smarterpanel-base
 # create .env file
