@@ -418,6 +418,7 @@ INSTALLTION_TYPE="update"
 else
 cd $document_root
 # remove existing files
+rm -rf $document_root/*
 rm -rf $document_root/.* 2> /dev/null # remove hidden files
 # git clone https://techsmarters${repo_pass}@bitbucket.org/techsmarters8333/smarterpanel-base.git
 git clone git@bitbucket.org:techsmarters8333/smarterpanel-base.git .
