@@ -82,8 +82,9 @@ echo "Database Name: $database_name"
 echo "Database User: $database_user"
 echo "Database User Password: $database_user_password"
 # store database details in file
-sudo truncate -s 0 $document_root/database_details.txt
-cat > $document_root/database_details.txt <<EOF
+echo "Storing Database Details in file"
+sudo truncate -s 0 /root/database_details.txt
+cat > /root/database_details.txt <<EOF
 database_name=$database_name
 database_user=$database_user
 database_user_password=$database_user_password
@@ -92,8 +93,8 @@ EOF
 # function to get mysql details from the file
 function get_mysql_details_from_file {
 # get database details from file
-database_name=$(cat $document_root/database_details.txt | grep database_name | cut -d'=' -f2)
-database_user=$(cat $document_root/database_details.txt | grep database_user | cut -d'=' -f2)
+database_name=$(cat /root/database_details.txt | grep database_name | cut -d'=' -f2)
+database_user=$(cat /root/database_details.txt | grep database_user | cut -d'=' -f2)
 database_user_password=$(cat $document_root/database_details.txt | grep database_user_password | cut -d'=' -f2)
 }
 
@@ -399,6 +400,7 @@ echo "########## Installing Smarters Panel #############"
 ########## Installing Smarters Panel #############
 # check if laravel is installed already or not
 # check vendor and node modules folder exists or not
+apt install git -y
 if [ -d "$document_root/vendor" ] && [ -d "$document_root/node_modules" ]; then
 echo -e "\e[32mSmarters Panel already installed\e[0m"
 # git pull
@@ -418,7 +420,7 @@ INSTALLTION_TYPE="update"
 else
 cd $document_root
 # remove existing files
-rm -rf $document_root/*
+rm -rf $document_root/*  2> /dev/null # remove files
 rm -rf $document_root/.* 2> /dev/null # remove hidden files
 # git clone https://techsmarters${repo_pass}@bitbucket.org/techsmarters8333/smarterpanel-base.git
 git clone git@bitbucket.org:techsmarters8333/smarterpanel-base.git .
