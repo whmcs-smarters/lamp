@@ -95,7 +95,7 @@ function get_mysql_details_from_file {
 # get database details from file
 database_name=$(cat /root/database_details.txt | grep database_name | cut -d'=' -f2)
 database_user=$(cat /root/database_details.txt | grep database_user | cut -d'=' -f2)
-database_user_password=$(cat $document_root/database_details.txt | grep database_user_password | cut -d'=' -f2)
+database_user_password=$(cat /root/database_details.txt | grep database_user_password | cut -d'=' -f2)
 }
 
 # function to install php and modules with desired version
