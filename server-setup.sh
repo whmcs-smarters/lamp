@@ -343,16 +343,15 @@ echo -e "\e[31mPHP Version is $php_version that is not desired one\e[0m"
 # installed desired version of php
 echo -e "\e[32mInstalling PHP $desired_version\e[0m"
 install_php_with_desired_version $desired_version
+sudo a2dismod php$php_version
+sudo a2enmod php$desired_version
+sudo update-alternatives --set php /usr/bin/php$desired_version
 fi
 else
 echo -e "\e[32mPHP is not installed\e[0m"
 install_php_with_desired_version $desired_version
 fi # main if to check if php is already installed
-php_version=$(php -v | head -n 1 | cut -d ' ' -f 2 | cut -c 1-3)
-sudo a2dismod php$php_version
-sudo a2enmod php$desired_version
-sudo service apache2 restart
-sudo update-alternatives --set php /usr/bin/php$desired_version
+echo -e "\e[32mRestarting Apache after PHP installation\e[0m"
 sudo systemctl restart apache2
 echo -e "Checking if domain name is provided by user with -d option"
 if [ ! -z "$domain_name" ]; then
@@ -364,6 +363,7 @@ echo "################## Free SSL Letsencrypt Installing ##################"
 echo "Free SSL Letsencrypt Installing..."
 if [ -f "/etc/letsencrypt/live/${domain_name}/fullchain.pem" ]; then
 echo -e "\e[32mSSL Certificate already exists\e[0m"
+app_url="https://$domain_name"
 else
 installSSL $domain_name
 fi
@@ -399,6 +399,7 @@ fi
 #git clone https://techsmarters${repo_pass}@bitbucket.org/techsmarters8333/smarterpanel-base.git
 # rsync -av smarterpanel-base $document_root
 # rm -rf smarterpanel-base
+INSTALLTION_TYPE="update"
 else
 cd $document_root
 # remove existing files
@@ -504,7 +505,8 @@ echo -e "\e[31mNPM Run Dev Failed\e[0m"
 exit 1
 fi
 php artisan key:generate
-fi
+INSTALLTION_TYPE="install"
+fi # main if to check if laravel is installed already or not
 php artisan migrate
 # check if artisan migrate successfully
 if [ $? -eq 0 ]; then
@@ -514,9 +516,13 @@ echo -e "\e[31mArtisan Migrate Failed\e[0m"
 exit 1
 fi
 # check if laravel is installed successfully
-if [ ! -f "$document_root/composer.json" ] && [ ! -d "$document_root/node_modules" ]; then
+# if [ ! -f "$document_root/composer.json" ] && [ ! -d "$document_root/node_modules" ]; then
+# php artisan db:seed
+# fi
+if [ "$INSTALLTION_TYPE" = "install" ] ; then
 php artisan db:seed
 fi
+
 # primission to laravel storage
 sudo chmod -R 777 $document_root/storage
 # primission to laravel bootstrap
