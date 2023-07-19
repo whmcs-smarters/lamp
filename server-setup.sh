@@ -111,8 +111,8 @@ domain_name=$1
 document_root="/var/www/$domain_name"
 # Create the document root directory
 mkdir -p "$document_root"
-sudo chown -R www-data:www-data $document_root
-sudo chmod -R 755 $document_root
+# sudo chown -R www-data:www-data $document_root
+# sudo chmod -R 755 $document_root
 # Create the virtual host file
 virtual_host_file="/etc/apache2/sites-available/$domain_name.conf"
 sudo truncate -s 0 "$virtual_host_file"
@@ -454,7 +454,7 @@ PUSHER_APP_KEY=
 PUSHER_APP_SECRET=
 QUEUE_CONNECTION=database
 EOF
-sudo chown -R www-data:www-data $document_root
+#sudo chown -R www-data:www-data $document_root
 sudo chmod -R 755 $document_root
 cd ~
 # install composer with no interaction
@@ -522,7 +522,9 @@ fi
 if [ "$INSTALLTION_TYPE" = "install" ] ; then
 php artisan db:seed
 fi
-
+# Time to give the accurate permissions
+sudo chown -R www-data:www-data $document_root
+sudo chmod -R 755 $document_root
 # primission to laravel storage
 sudo chmod -R 777 $document_root/storage
 # primission to laravel bootstrap
@@ -530,6 +532,8 @@ sudo chmod -R 777 $document_root/bootstrap
 # primission to laravel cache
 sudo chmod -R 777 $document_root/bootstrap/cache
 sudo chmod -R 777 $document_root/storage/logs/
+# Restart Apache
+sudo systemctl restart apache2
 # run artisan optimize 
 php artisan optimize:clear
 # check if artisan optimize successfully
