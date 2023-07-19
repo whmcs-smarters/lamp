@@ -81,7 +81,22 @@ echo "*************** Database Details ******************"
 echo "Database Name: $database_name"
 echo "Database User: $database_user"
 echo "Database User Password: $database_user_password"
+# store database details in file
+sudo truncate -s 0 $document_root/database_details.txt
+cat > $document_root/database_details.txt <<EOF
+database_name=$database_name
+database_user=$database_user
+database_user_password=$database_user_password
+EOF
 }
+# function to get mysql details from the file
+function get_mysql_details_from_file {
+# get database details from file
+database_name=$(cat $document_root/database_details.txt | grep database_name | cut -d'=' -f2)
+database_user=$(cat $document_root/database_details.txt | grep database_user | cut -d'=' -f2)
+database_user_password=$(cat $document_root/database_details.txt | grep database_user_password | cut -d'=' -f2)
+}
+
 # function to install php and modules with desired version
 function install_php_with_desired_version {
 desired_version=$1
@@ -414,6 +429,8 @@ fi
 # mv -f smarterpanel-base/* $document_root
 # rm -rf smarterpanel-base
 # create .env file
+echo "fetching mysql details from file"
+get_mysql_details_from_file
 echo "Creating .env file"
 sudo truncate -s 0 $document_root/.env
 cat >> $document_root/.env <<EOF
