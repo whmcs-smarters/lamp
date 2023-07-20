@@ -12,14 +12,73 @@ p) repo_pass=${OPTARG};;
 m) mysql_root_pass=${OPTARG};;
 esac
 done
+
+# check if domain name is provided or not
+echo -e "Checking if domain name is provided by user with -d option"
+if [ -z "$domain_name" ]
+then
+echo -e "\033[33mDomain Name not provided\033[0m"
+ip_address=$(curl -s http://checkip.amazonaws.com)
+$domain_name=$ip_address
+else
+echo -e "\033[33mDomain Name is provided\033[0m"
+fi
 # Start logging the script
 echo -e "\033[33mLogging the script into server-setup-$domain_name.log\e[0m"
 exec > >(tee -i server-setup-$domain_name.log)
 exec 2>&1
+# CHECK IF SMARTERS PANEL IS ALREADY INSTALLED OR NOT
+# check if laravel is installed already or not
+# check vendor and node modules folder exists or not
+document_root="/var/www/$domain_name"
+if [ -d "$document_root/vendor" ] && [ -d "$document_root/node_modules" ]; then
+update_smarters_panel
+# exit the script nicely
+exit 0
+fi
+function update_smarters_panel {
+echo "Updating the Smarters Panel on Commit"
+cd $document_root
+chown -r $USER:$USER $document_root # change ownership to current user for clonning
+# rm -rf smarterpanel-base
+git pull origin Smarters-Panel-Base
+if [ $? -eq 0 ]; then
+echo -e "\e[32mSmarters Panel updated successfully\e[0m"
+else
+echo -e "\e[31mSmarters Panel updating failed\e[0m"
+fi
+php artisan migrate
+# check if artisan migrate successfully
+if [ $? -eq 0 ]; then
+echo -e "\e[32mArtisan Migrate Successfully\e[0m"
+else
+echo -e "\e[31mArtisan Migrate Failed\e[0m"
+exit 1
+fi
+# Time to give the accurate permissions
+sudo chown -R www-data:www-data $document_root
+sudo chmod -R 755 $document_root
+# primission to laravel storage
+sudo chmod -R 777 $document_root/storage
+# primission to laravel bootstrap
+sudo chmod -R 777 $document_root/bootstrap
+# primission to laravel cache
+sudo chmod -R 777 $document_root/bootstrap/cache
+sudo chmod -R 777 $document_root/storage/logs/
+# Restart Apache
+sudo systemctl restart apache2
+# run artisan optimize
+php artisan optimize:clear
+# check if artisan optimize successfully
+if [ $? -eq 0 ]; then
+echo -e "\e[32mArtisan Optimize Successfully\e[0m"
+else
+echo -e "\e[32mArtisan Optimize Failed\e[0m"
+fi
+
+}
 
 # Functions Declaration
-
-
 # function to check if last command executed successfully or not with message
 function check_last_command_execution {
 if [ $? -eq 0 ]; then
@@ -232,6 +291,64 @@ sudo apt autoremove -y
 sudo rm -rf /etc/apache2
 echo -e "Apache is removed completely"
 }
+# last check to make sure everything is working fine
+# check if apache is running or not
+function final_check {
+echo -e "\e[32mChecking if Apache is running or not\e[0m"
+apache_running=$(systemctl status apache2 | grep -c "active (running)")
+if [ $apache_running -eq 1 ]; then
+echo -e "\e[32mApache is running\e[0m"
+else
+echo -e "\e[31mApache is not running\e[0m"
+fi
+# check if mysql is running or not
+echo -e "\e[32mChecking if MySQL is running or not\e[0m"
+mysql_running=$(systemctl status mysql | grep -c "active (running)")
+if [ $mysql_running -eq 1 ]; then
+echo -e "\e[32mMySQL is running\e[0m"
+else
+echo -e "\e[31mMySQL is not running\e[0m"
+fi
+# check if php is running or not
+echo -e "\e[32mChecking if PHP is running or not\e[0m"
+php_version=$(php -r 'echo PHP_VERSION;')
+if [[ $php_version == *"$desired_version"* ]]; then
+echo -e "\e[32mPHP Version is $php_version\e[0m"
+else
+echo -e "\e[31mPHP Version is $php_version that is not desired one\e[0m"
+fi
+# check if composer is installed or not
+echo -e "\e[32mChecking if Composer is installed or not\e[0m"
+composer_path=$(which composer)
+if [ -x "$composer_path" ]; then
+echo -e "\e[32mComposer is installed at: $composer_path\e[0m"
+else
+echo -e "\e[31mComposer is not installed\e[0m"
+fi
+# check if nodejs is installed or not
+echo -e "\e[32mChecking if NodeJS is installed or not\e[0m"
+nodejs_path=$(which node)
+if [ -x "$nodejs_path" ]; then
+echo -e "\e[32mNodeJS is installed at: $nodejs_path\e[0m"
+else
+echo -e "\e[31mNodeJS is not installed\e[0m"
+fi
+# check if npm is installed or not
+echo -e "\e[32mChecking if NPM is installed or not\e[0m"
+npm_path=$(which npm)
+if [ -x "$npm_path" ]; then
+echo -e "\e[32mNPM is installed at: $npm_path\e[0m"
+else
+echo -e "\e[31mNPM is not installed\e[0m"
+fi
+# check if Smarters Panel cloned and installed successfully
+echo -e "\e[32mChecking if Smarters Panel cloned and installed successfully\e[0m"
+if [ -d "$document_root/vendor" ] && [ -d "$document_root/node_modules" ]; then
+echo -e "\e[32mSmarters Panel cloned and installed successfully\e[0m"
+else
+echo -e "\e[31mSmarters Panel cloned and installed failed\e[0m"
+fi
+}
 
 # check if repo password is provided or not
 echo -e "Checking if repo password is provided by user with -p option"
@@ -397,7 +514,7 @@ installSSL $domain_name
 fi
 else
 echo -e "\e[32mDomain Name is not provided by user with option -d So, we are installing with IP Address\e[0m"
-domain_name=$(curl -s http://checkip.amazonaws.com)
+domain_name=$ip_address
 create_virtual_host $domain_name
 app_url="http://$domain_name"
 fi
@@ -453,6 +570,7 @@ echo -e "\e[32mSmarters Panel already installed\e[0m"
 # git pull
 echo "Updating the Smarters Panel"
 cd $document_root
+chown -r $USER:$USER $document_root # change ownership to current user for clonning
 # rm -rf smarterpanel-base
 git pull origin Smarters-Panel-Base
 if [ $? -eq 0 ]; then
@@ -610,62 +728,7 @@ echo -e "\e[32mArtisan Optimize Successfully\e[0m"
 else
 echo -e "\e[32mArtisan Optimize Failed\e[0m"
 fi
-# last check to make sure everything is working fine
-# check if apache is running or not
-echo -e "\e[32mChecking if Apache is running or not\e[0m"
-apache_running=$(systemctl status apache2 | grep -c "active (running)")
-if [ $apache_running -eq 1 ]; then
-echo -e "\e[32mApache is running\e[0m"
-else
-echo -e "\e[31mApache is not running\e[0m"
-fi
-# check if mysql is running or not
-echo -e "\e[32mChecking if MySQL is running or not\e[0m"
-mysql_running=$(systemctl status mysql | grep -c "active (running)")
-if [ $mysql_running -eq 1 ]; then
-echo -e "\e[32mMySQL is running\e[0m"
-else
-echo -e "\e[31mMySQL is not running\e[0m"
-fi
-# check if php is running or not
-echo -e "\e[32mChecking if PHP is running or not\e[0m"
-php_version=$(php -r 'echo PHP_VERSION;')
-if [[ $php_version == *"$desired_version"* ]]; then
-echo -e "\e[32mPHP Version is $php_version\e[0m"
-else
-echo -e "\e[31mPHP Version is $php_version that is not desired one\e[0m"
-fi
-# check if composer is installed or not
-echo -e "\e[32mChecking if Composer is installed or not\e[0m"
-composer_path=$(which composer)
-if [ -x "$composer_path" ]; then
-echo -e "\e[32mComposer is installed at: $composer_path\e[0m"
-else
-echo -e "\e[31mComposer is not installed\e[0m"
-fi
-# check if nodejs is installed or not
-echo -e "\e[32mChecking if NodeJS is installed or not\e[0m"
-nodejs_path=$(which node)
-if [ -x "$nodejs_path" ]; then
-echo -e "\e[32mNodeJS is installed at: $nodejs_path\e[0m"
-else
-echo -e "\e[31mNodeJS is not installed\e[0m"
-fi
-# check if npm is installed or not
-echo -e "\e[32mChecking if NPM is installed or not\e[0m"
-npm_path=$(which npm)
-if [ -x "$npm_path" ]; then
-echo -e "\e[32mNPM is installed at: $npm_path\e[0m"
-else
-echo -e "\e[31mNPM is not installed\e[0m"
-fi
-# check if Smarters Panel cloned and installed successfully
-echo -e "\e[32mChecking if Smarters Panel cloned and installed successfully\e[0m"
-if [ -d "$document_root/vendor" ] && [ -d "$document_root/node_modules" ]; then
-echo -e "\e[32mSmarters Panel cloned and installed successfully\e[0m"
-else
-echo -e "\e[31mSmarters Panel cloned and installed failed\e[0m"
-fi
+final_check # call function to check if everything is working fine
 #  clear files 
 rm -rf /root/database_details.txt 2> /dev/null # remove files
 # clear installation files
