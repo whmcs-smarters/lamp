@@ -31,11 +31,6 @@ exec 2>&1
 # check if laravel is installed already or not
 # check vendor and node modules folder exists or not
 document_root="/var/www/$domain_name"
-if [ -d "$document_root/vendor" ] && [ -d "$document_root/node_modules" ]; then
-update_smarters_panel
-# exit the script nicely
-exit 0
-fi
 function update_smarters_panel {
 echo "Updating the Smarters Panel on Commit"
 cd $document_root
@@ -75,9 +70,14 @@ echo -e "\e[32mArtisan Optimize Successfully\e[0m"
 else
 echo -e "\e[32mArtisan Optimize Failed\e[0m"
 fi
-
 }
 
+if [ -d "$document_root/vendor" ] && [ -d "$document_root/node_modules" ]; then
+echo " ################### Updating Smarters Panel ##################"
+update_smarters_panel
+# exit the script nicely
+exit 0
+fi
 # Functions Declaration
 # function to check if last command executed successfully or not with message
 function check_last_command_execution {
