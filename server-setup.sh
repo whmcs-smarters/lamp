@@ -34,7 +34,7 @@ document_root="/var/www/$domain_name"
 function update_smarters_panel {
 echo "Updating the Smarters Panel on Commit"
 cd $document_root
-chown -r $USER:$USER $document_root # change ownership to current user for clonning
+chown -R $USER:$USER $document_root # change ownership to current user for clonning
 # rm -rf smarterpanel-base
 git pull origin Smarters-Panel-Base
 if [ $? -eq 0 ]; then
@@ -570,7 +570,7 @@ echo -e "\e[32mSmarters Panel already installed\e[0m"
 # git pull
 echo "Updating the Smarters Panel"
 cd $document_root
-chown -r $USER:$USER $document_root # change ownership to current user for clonning
+chown -R $USER:$USER $document_root # change ownership to current user for clonning
 # rm -rf smarterpanel-base
 git pull origin Smarters-Panel-Base
 if [ $? -eq 0 ]; then
