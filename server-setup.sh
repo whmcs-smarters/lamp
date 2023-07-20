@@ -55,12 +55,18 @@ sudo apt-get install mysql-server -y
 check_last_command_execution "MySQL Installed with Password: $MYSQL_ROOT_PASSWORD" "MySQL Installation Failed"
 echo "MySQL Version: $(mysql -V | awk '{print $1,$2,$3}')"
 }
+# function to create random database name
+generate_random_database_name() {
+    length=5
+    characters='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+    echo $(LC_ALL=C tr -dc "$characters" < /dev/urandom | head -c "$length")
+}
 # function to create database and database user
 function create_database_and_database_user {
 MYSQL_ROOT_PASSWORD=$1
 # Create a database for the domain name provided by the user
 echo -e "\e[32mCreating Database and DB User\e[0m"
-database_name="smarterspanel_db";
+database_name=smarters_$(generate_random_database_name)
 # create database if not exists
 mysql -u root -p$MYSQL_ROOT_PASSWORD -e "CREATE DATABASE IF NOT EXISTS $database_name;"
 check_last_command_execution "Database $database_name Created Successfully" "Database $database_name Creation Failed"
@@ -323,11 +329,16 @@ install_mysql_with_defined_password $MYSQL_ROOT_PASSWORD
 create_database_and_database_user $MYSQL_ROOT_PASSWORD
 fi # main if to check if mysql is already installed
 else # mysql_root_pass if condition empty or not
-MYSQL_ROOT_PASSWORD="$(openssl rand -base64 12)"
 # check if it's already installed
 mysql=$(dpkg-query -W -f='${Status}' mysql-server 2>/dev/null | grep -c "ok installed")
 if [ $mysql -eq 1 ]; then
 echo -e "\e[32mMySQL is already installed\e[0m"
+# check if smarters panel is already installed by check .env file
+if [ ! -f "/$document_root/.env" ]; then
+echo -e "Smarters Panel is not installed"
+echo -e "\e[31mMySQL Server already installed but Root Password is not provided by user with -m option\e[0m"
+exit 1
+fi
 # # remove mysql completely
 # echo "Removing MySQL completely with configuration files"
 # # call function to remove mysql completely
@@ -336,6 +347,7 @@ echo -e "\e[32mMySQL is already installed\e[0m"
 # install_mysql_with_defined_password $MYSQL_ROOT_PASSWORD
 # create_database_and_database_user $MYSQL_ROOT_PASSWORD
 else
+MYSQL_ROOT_PASSWORD="$(openssl rand -base64 12)"
 install_mysql_with_defined_password $MYSQL_ROOT_PASSWORD
 create_database_and_database_user $MYSQL_ROOT_PASSWORD
 fi 
