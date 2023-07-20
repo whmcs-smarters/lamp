@@ -28,7 +28,6 @@ echo -e "\033[33mLogging the script into server-setup-$domain_name.log\e[0m"
 exec > >(tee -i server-setup-$domain_name.log)
 exec 2>&1
 # CHECK IF SMARTERS PANEL IS ALREADY INSTALLED OR NOT
-# check if laravel is installed already or not
 # check vendor and node modules folder exists or not
 document_root="/var/www/$domain_name"
 function update_smarters_panel {
