@@ -608,7 +608,7 @@ echo -e "\e[31mComposer is not installed\e[0m"
 fi
 # check if nodejs is installed or not
 echo -e "\e[32mChecking if NodeJS is installed or not\e[0m"
-nodejs_path=$(which nodejs)
+nodejs_path=$(which node)
 if [ -x "$nodejs_path" ]; then
 echo -e "\e[32mNodeJS is installed at: $nodejs_path\e[0m"
 else
@@ -628,13 +628,6 @@ if [ -d "$document_root/vendor" ] && [ -d "$document_root/node_modules" ]; then
 echo -e "\e[32mSmarters Panel cloned and installed successfully\e[0m"
 else
 echo -e "\e[31mSmarters Panel cloned and installed failed\e[0m"
-fi
-# check if Smarters Panel is running or not
-echo -e "\e[32mChecking if Smarters Panel is running or not\e[0m"
-if [ -f "$document_root/composer.json" ] && [ -d "$document_root/.env" ]; then
-echo -e "\e[32mSmarters Panel is running\e[0m"
-else
-echo -e "\e[31mSmarters Panel is not running\e[0m"
 fi
 #  clear files 
 rm -rf /root/database_details.txt 2> /dev/null # remove files
