@@ -13,8 +13,8 @@ m) mysql_root_pass=${OPTARG};;
 esac
 done
 # Start logging the script
-echo -e "\033[33mLogging the script into server-setup.log\e[0m"
-exec > >(tee -i server-setup.log)
+echo -e "\033[33mLogging the script into server-setup-$domain_name.log\e[0m"
+exec > >(tee -i server-setup-$domain_name.log)
 exec 2>&1
 
 # Functions Declaration
