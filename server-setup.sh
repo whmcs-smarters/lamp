@@ -4,12 +4,13 @@ echo -e "\e[1;43mWelcome to Smarters Panel Installation with LAMP\e[0m"
 # USAGE: ./server-setup.sh -d domain_name -p repo_password -m mysql_password
 # EXAMPLE: ./server-setup.sh -d example.com -p password -m password
 # Get the options from user input
-while getopts ":d:p:m:" o
+while getopts ":d:p:m:b:" o
 do
 case "${o}" in
 d) domain_name=${OPTARG};;
 p) repo_pass=${OPTARG};;
 m) mysql_root_pass=${OPTARG};;
+b) git_branch=${OPTARG};;
 esac
 done
 
@@ -35,7 +36,7 @@ echo "Updating the Smarters Panel on Commit"
 cd $document_root
 chown -R $USER:$USER $document_root # change ownership to current user for clonning
 # rm -rf smarterpanel-base
-git pull origin Smarters-Panel-Base
+git pull origin $git_branch
 if [ $? -eq 0 ]; then
 echo -e "\e[32mSmarters Panel updated successfully\e[0m"
 else
@@ -571,7 +572,7 @@ echo "Updating the Smarters Panel"
 cd $document_root
 chown -R $USER:$USER $document_root # change ownership to current user for clonning
 # rm -rf smarterpanel-base
-git pull origin Smarters-Panel-Base
+git pull origin $git_branch
 if [ $? -eq 0 ]; then
 echo -e "\e[32mSmarters Panel updated successfully\e[0m"
 else
@@ -587,7 +588,7 @@ cd $document_root
 rm -rf $document_root/*  2> /dev/null # remove files
 rm -rf $document_root/.* 2> /dev/null # remove hidden files
 # git clone https://techsmarters${repo_pass}@bitbucket.org/techsmarters8333/smarterpanel-base.git
-git clone git@bitbucket.org:techsmarters8333/smarterpanel-base.git .
+git clone  -b $git_branch git@bitbucket.org:techsmarters8333/smarterpanel-base.git .
 if [ $? -eq 0 ]; then
 echo -e "\e[32mSmarters Panel clonned successfully\e[0m"
 else
