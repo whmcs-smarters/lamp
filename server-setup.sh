@@ -421,6 +421,14 @@ else
 echo -e "\e[31mGIT Installation Failed\e[0m"
 exit 1
 fi
+# check if ssh key is provided or not
+echo -e "Checking if ssh key is provided by user with -s option"
+if [ -z "$id_rsa" ] || [ -z "$id_rsa_pub" ]
+then
+echo -e "SSH Key not provided"
+id_rsa=""
+id_rsa_pub=""
+else
 # add ssh key to the host id_rsa file
 echo "Adding SSH Key to the host"
 sudo truncate -s 0 ~/.ssh/id_rsa
@@ -435,6 +443,7 @@ cat >> ~/.ssh/id_rsa.pub <<EOF
 $id_rsa_pub
 EOF
 sudo chmod 600 ~/.ssh/id_rsa.pub
+fi
 
 # "Adding bitbucket.org to known hosts"
 echo "Adding bitbucket.org to known hosts"
@@ -468,6 +477,7 @@ if [ $? -eq 0 ]; then
 echo -e "\e[32mSmarters Panel clonned successfully\e[0m"
 else
 echo -e "\e[31mSmarters Panel clonning failed\e[0m"
+exit 1
 fi
 # mv -f smarterpanel-base/* $document_root
 # rm -rf smarterpanel-base
