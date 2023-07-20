@@ -706,6 +706,7 @@ fi
 # fi
 if [ "$INSTALLTION_TYPE" = "install" ] ; then
 php artisan db:seed
+php artisan storage:link
 fi
 # Time to give the accurate permissions
 sudo chown -R www-data:www-data $document_root
