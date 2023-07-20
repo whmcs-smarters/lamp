@@ -401,6 +401,16 @@ echo "########## Installing Smarters Panel #############"
 # check if laravel is installed already or not
 # check vendor and node modules folder exists or not
 apt install git -y
+if [ $? -eq 0 ]; then
+echo -e "\e[32mGIT Installed Successfully\e[0m"
+else
+echo -e "\e[31mGIT Installation Failed\e[0m"
+exit 1
+fi
+# "Adding bitbucket.org to known hosts"
+echo "Adding bitbucket.org to known hosts"
+# create known_hosts file
+sudo truncate -s 0 ~/.ssh/known_hosts
 ssh-keygen -R bitbucket.org && curl https://bitbucket.org/site/ssh >> ~/.ssh/known_hosts && chmod 600 ~/.ssh/known_hosts && chmod 700 ~/.ssh 
 if [ -d "$document_root/vendor" ] && [ -d "$document_root/node_modules" ]; then
 echo -e "\e[32mSmarters Panel already installed\e[0m"
