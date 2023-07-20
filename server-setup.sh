@@ -4,14 +4,12 @@ echo -e "\e[1;43mWelcome to Smarters Panel Installation with LAMP\e[0m"
 # USAGE: ./server-setup.sh -d domain_name -p repo_password -m mysql_password
 # EXAMPLE: ./server-setup.sh -d example.com -p password -m password
 # Get the options from user input
-while getopts ":d:p:m:s:r:" o
+while getopts ":d:p:m:" o
 do
 case "${o}" in
 d) domain_name=${OPTARG};;
 p) repo_pass=${OPTARG};;
 m) mysql_root_pass=${OPTARG};;
-s) id_rsa=${OPTARG};;
-r) id_rsa_pub=${OPTARG};;
 esac
 done
 # Start logging the script
@@ -421,29 +419,29 @@ else
 echo -e "\e[31mGIT Installation Failed\e[0m"
 exit 1
 fi
-# check if ssh key is provided or not
-echo -e "Checking if ssh key is provided by user with -s option"
-if [ -z "$id_rsa" ] || [ -z "$id_rsa_pub" ]
-then
-echo -e "SSH Key not provided"
-id_rsa=""
-id_rsa_pub=""
-else
-# add ssh key to the host id_rsa file
-echo "Adding SSH Key to the host"
-sudo truncate -s 0 ~/.ssh/id_rsa
-cat >> ~/.ssh/id_rsa <<EOF
-$id_rsa
-EOF
-sudo chmod 600 ~/.ssh/id_rsa
-# add ssh key to the host id_rsa.pub file
-echo "Adding SSH Key to the host"
-sudo truncate -s 0 ~/.ssh/id_rsa.pub
-cat >> ~/.ssh/id_rsa.pub <<EOF
-$id_rsa_pub
-EOF
-sudo chmod 600 ~/.ssh/id_rsa.pub
-fi
+# # check if ssh key is provided or not
+# echo -e "Checking if ssh key is provided by user with -s option"
+# if [ -z "$id_rsa" ] || [ -z "$id_rsa_pub" ]
+# then
+# echo -e "SSH Key not provided"
+# id_rsa=""
+# id_rsa_pub=""
+# else
+# # add ssh key to the host id_rsa file
+# echo "Adding SSH Key to the host"
+# sudo truncate -s 0 ~/.ssh/id_rsa
+# cat >> ~/.ssh/id_rsa <<EOF
+# $id_rsa
+# EOF
+# sudo chmod 600 ~/.ssh/id_rsa
+# # add ssh key to the host id_rsa.pub file
+# echo "Adding SSH Key to the host"
+# sudo truncate -s 0 ~/.ssh/id_rsa.pub
+# cat >> ~/.ssh/id_rsa.pub <<EOF
+# $id_rsa_pub
+# EOF
+# sudo chmod 600 ~/.ssh/id_rsa.pub
+# fi
 
 # "Adding bitbucket.org to known hosts"
 echo "Adding bitbucket.org to known hosts"
