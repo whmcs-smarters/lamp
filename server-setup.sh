@@ -562,6 +562,75 @@ echo -e "\e[32mArtisan Optimize Successfully\e[0m"
 else
 echo -e "\e[32mArtisan Optimize Failed\e[0m"
 fi
+# last check to make sure everything is working fine
+# check if apache is running or not
+echo -e "\e[32mChecking if Apache is running or not\e[0m"
+apache_running=$(systemctl status apache2 | grep -c "active (running)")
+if [ $apache_running -eq 1 ]; then
+echo -e "\e[32mApache is running\e[0m"
+else
+echo -e "\e[31mApache is not running\e[0m"
+fi
+# check if mysql is running or not
+echo -e "\e[32mChecking if MySQL is running or not\e[0m"
+mysql_running=$(systemctl status mysql | grep -c "active (running)")
+if [ $mysql_running -eq 1 ]; then
+echo -e "\e[32mMySQL is running\e[0m"
+else
+echo -e "\e[31mMySQL is not running\e[0m"
+fi
+# check if php is running or not
+echo -e "\e[32mChecking if PHP is running or not\e[0m"
+php_version=$(php -r 'echo PHP_VERSION;')
+if [[ $php_version == *"$desired_version"* ]]; then
+echo -e "\e[32mPHP Version is $php_version\e[0m"
+else
+echo -e "\e[31mPHP Version is $php_version that is not desired one\e[0m"
+fi
+# check if composer is installed or not
+echo -e "\e[32mChecking if Composer is installed or not\e[0m"
+composer_path=$(which composer)
+if [ -x "$composer_path" ]; then
+echo -e "\e[32mComposer is installed at: $composer_path\e[0m"
+else
+echo -e "\e[31mComposer is not installed\e[0m"
+fi
+# check if nodejs is installed or not
+echo -e "\e[32mChecking if NodeJS is installed or not\e[0m"
+nodejs_path=$(which nodejs)
+if [ -x "$nodejs_path" ]; then
+echo -e "\e[32mNodeJS is installed at: $nodejs_path\e[0m"
+else
+echo -e "\e[31mNodeJS is not installed\e[0m"
+fi
+# check if npm is installed or not
+echo -e "\e[32mChecking if NPM is installed or not\e[0m"
+npm_path=$(which npm)
+if [ -x "$npm_path" ]; then
+echo -e "\e[32mNPM is installed at: $npm_path\e[0m"
+else
+echo -e "\e[31mNPM is not installed\e[0m"
+fi
+# check if Smarters Panel cloned and installed successfully
+echo -e "\e[32mChecking if Smarters Panel cloned and installed successfully\e[0m"
+if [ -d "$document_root/vendor" ] && [ -d "$document_root/node_modules" ]; then
+echo -e "\e[32mSmarters Panel cloned and installed successfully\e[0m"
+else
+echo -e "\e[31mSmarters Panel cloned and installed failed\e[0m"
+fi
+# check if Smarters Panel is running or not
+echo -e "\e[32mChecking if Smarters Panel is running or not\e[0m"
+if [ -f "$document_root/composer.json" ] && [ -d "$document_root/.env" ]; then
+echo -e "\e[32mSmarters Panel is running\e[0m"
+else
+echo -e "\e[31mSmarters Panel is not running\e[0m"
+fi
+#  clear files 
+rm -rf /root/database_details.txt 2> /dev/null # remove files
+# clear installation files
+rm -rf /root/server-setup.sh 2> /dev/null # remove files
+# show success message in green color
+
 echo -e "\e[32mSmarters Panel Installed Successfully\e[0m"
 # show user the panel url
 echo "You can access your smarters panel at $app_url"
