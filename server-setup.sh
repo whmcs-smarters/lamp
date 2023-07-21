@@ -449,6 +449,7 @@ git_branch=$2
 cd $document_root
 chown -R $USER:$USER $document_root # change ownership to current user for clonning
 # rm -rf smarterpanel-base
+git stash
 git pull origin $git_branch
 check_last_command_execution "Smarters Panel Updated Successfully" "Smarters Panel Update Failed.Exit the script"
 php artisan migrate
