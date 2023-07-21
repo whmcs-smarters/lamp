@@ -1,83 +1,39 @@
 #!/bin/bash
-# This script will install LAMP in Ubuntu 22.04
-echo -e "\e[1;43mWelcome to Smarters Panel Installation with LAMP\e[0m"
-# USAGE: ./server-setup.sh -d domain_name -p repo_password -m mysql_password
-# EXAMPLE: ./server-setup.sh -d example.com -p password -m password
-# Get the options from user input
-while getopts ":d:p:m:b:" o
-do
-case "${o}" in
-d) domain_name=${OPTARG};;
-p) repo_pass=${OPTARG};;
-m) mysql_root_pass=${OPTARG};;
-b) git_branch=${OPTARG};;
-esac
-done
 
-# check if domain name is provided or not
-echo -e "Checking if domain name is provided by user with -d option"
-if [ -z "$domain_name" ]
+# This functino first check if domain is empty or not then check if it's valid or not then it set the domain namea and isSubdomain variable too
+function check_domain_or_subdomain {
+# Get the input from user
+input=$1
+# Split the input into an array using dot as the delimiter
+IFS='.' read -ra parts <<< "$input"
+# Check the number of parts in the input
+num_parts=${#parts[@]}
+if [[ $num_parts -gt 2 ]]; then
+    # The input is a subdomain and bold it
+    echo -e "The input \033[97;44;1m $input \033[m is a subdomain."
+    isSubdomain=true
+elif [[ $num_parts -eq 2 ]]; then
+    echo -e "The input \033[97;44;1m $input \033[m is a domain."
+    isSubdomain=false
+else
+    echo -e "\033[1;31mInvalid Input:\033[0m\033[97;44;1m $input \033[m.\033[1;31mPlease provide a valid domain or subdomain.\033[0m"
+    exit 1
+fi
+echo "SET - ${bold}isSubomain: ${normal} $isSubomain"
+}
+function set_check_valid_domain_name {
+if [ -z "$1" ]
 then
-echo -e "\033[33mDomain Name not provided\033[0m"
+echo -e "\033[33mDomain Name not provided So, We are using IP Address \033[0m"
 ip_address=$(curl -s http://checkip.amazonaws.com)
-$domain_name=$ip_address
+domain_name=$ip_address
+sslInstallation=false
 else
 echo -e "\033[33mDomain Name is provided\033[0m"
-fi
-# Start logging the script
-echo -e "\033[33mLogging the script into server-setup-$domain_name.log\e[0m"
-exec > >(tee -i server-setup-$domain_name.log)
-exec 2>&1
-# CHECK IF SMARTERS PANEL IS ALREADY INSTALLED OR NOT
-# check vendor and node modules folder exists or not
-document_root="/var/www/$domain_name"
-function update_smarters_panel {
-echo "Updating the Smarters Panel on Commit"
-cd $document_root
-chown -R $USER:$USER $document_root # change ownership to current user for clonning
-# rm -rf smarterpanel-base
-git pull origin $git_branch
-if [ $? -eq 0 ]; then
-echo -e "\e[32mSmarters Panel updated successfully\e[0m"
-else
-echo -e "\e[31mSmarters Panel updating failed\e[0m"
-fi
-php artisan migrate
-# check if artisan migrate successfully
-if [ $? -eq 0 ]; then
-echo -e "\e[32mArtisan Migrate Successfully\e[0m"
-else
-echo -e "\e[31mArtisan Migrate Failed\e[0m"
-exit 1
-fi
-# Time to give the accurate permissions
-sudo chown -R www-data:www-data $document_root
-sudo chmod -R 755 $document_root
-# primission to laravel storage
-sudo chmod -R 777 $document_root/storage
-# primission to laravel bootstrap
-sudo chmod -R 777 $document_root/bootstrap
-# primission to laravel cache
-sudo chmod -R 777 $document_root/bootstrap/cache
-sudo chmod -R 777 $document_root/storage/logs/
-# Restart Apache
-sudo systemctl restart apache2
-# run artisan optimize
-php artisan optimize:clear
-# check if artisan optimize successfully
-if [ $? -eq 0 ]; then
-echo -e "\e[32mArtisan Optimize Successfully\e[0m"
-else
-echo -e "\e[32mArtisan Optimize Failed\e[0m"
+check_domain_or_subdomain $1
+domain_name=$1
 fi
 }
-
-if [ -d "$document_root/vendor" ] && [ -d "$document_root/node_modules" ]; then
-echo " ################### Updating Smarters Panel ##################"
-update_smarters_panel
-# exit the script nicely
-exit 0
-fi
 # Functions Declaration
 # function to check if last command executed successfully or not with message
 function check_last_command_execution {
@@ -111,8 +67,11 @@ echo -e "\e[32mInstalling MySQL\e[0m"
 sudo debconf-set-selections <<< "mysql-server mysql-server/root_password password $MYSQL_ROOT_PASSWORD"
 sudo debconf-set-selections <<< "mysql-server mysql-server/root_password_again password $MYSQL_ROOT_PASSWORD"
 sudo apt-get install mysql-server -y
-check_last_command_execution "MySQL Installed with Password: $MYSQL_ROOT_PASSWORD" "MySQL Installation Failed"
+check_last_command_execution "MySQL Installed Successfully" "MySQL Installation Failed"
 echo "MySQL Version: $(mysql -V | awk '{print $1,$2,$3}')"
+if [ "$isMasked" = false ] ; then
+echo "MySQL Root Password: $MYSQL_ROOT_PASSWORD"
+fi
 }
 # function to create random database name
 generate_random_database_name() {
@@ -130,8 +89,10 @@ database_name=smarters_$(generate_random_database_name)
 mysql -u root -p$MYSQL_ROOT_PASSWORD -e "CREATE DATABASE IF NOT EXISTS $database_name;"
 check_last_command_execution "Database $database_name Created Successfully" "Database $database_name Creation Failed"
 # show databases
+if [ "$isMasked" = false ] ; then
 echo "Showing Databases"
 mysql -u root -p$MYSQL_ROOT_PASSWORD -e "show databases;"
+fi
 # Generating Random Username and Password for Database User
 database_user="$(openssl rand -base64 12)"
 # Create a database user for the domain name provided by the user
@@ -142,18 +103,12 @@ mysql -u root -p$MYSQL_ROOT_PASSWORD -e "GRANT ALL PRIVILEGES ON $database_name.
 # Flush privileges
 mysql -u root -p$MYSQL_ROOT_PASSWORD -e "FLUSH PRIVILEGES;"
 check_last_command_execution "Database User Created Successfully" "Database User Creation Failed"
+if [ "$isMasked" = false ] ; then
 echo "*************** Database Details ******************"
 echo "Database Name: $database_name"
 echo "Database User: $database_user"
 echo "Database User Password: $database_user_password"
-# store database details in file
-echo "Storing Database Details in file"
-sudo truncate -s 0 /root/database_details.txt
-cat > /root/database_details.txt <<EOF
-database_name=$database_name
-database_user=$database_user
-database_user_password=$database_user_password
-EOF
+fi
 }
 # function to get mysql details from the file
 function get_mysql_details_from_file {
@@ -174,6 +129,17 @@ sudo apt-get update -y
 sudo apt-get install php$desired_version -y
 sudo apt install unzip
 sudo apt-get install php$desired_version-{bcmath,bz2,intl,gd,mbstring,mysql,zip,curl,xml,cli} -y
+check_last_command_execution "PHP $desired_version Installed Successfully" "PHP $desired_version Installation Failed"
+php_version=$(php -r 'echo PHP_VERSION;')
+if [[ $php_version == *"$desired_version"* ]]; then
+echo -e "\e[32mPHP Installed with version $php_version\e[0m"
+# nothing to do as PHP is already installed with desired version
+else
+echo -e "\e[31mPHP Version is $php_version that is not desired one\e[0m"
+# installed desired version of php
+sudo a2dismod php$php_version
+sudo a2enmod php$desired_version
+sudo update-alternatives --set php /usr/bin/php$desired_version
 }
 # function to remove mysql completely
 function remove_mysql_completely {
@@ -189,12 +155,9 @@ check_last_command_execution "MySQL Removed Completely" "MySQL Removal Failed"
 function create_virtual_host {
 domain_name=$1
 # Define the variables
-document_root="/var/www/$domain_name"
+document_root=$2
 # Create the document root directory
 mkdir -p "$document_root"
-# sudo chown -R www-data:www-data $document_root
-# sudo chmod -R 755 $document_root
-# Create the virtual host file
 virtual_host_file="/etc/apache2/sites-available/$domain_name.conf"
 sudo truncate -s 0 "$virtual_host_file"
 cat << EOF > "$virtual_host_file"
@@ -210,77 +173,32 @@ cat << EOF > "$virtual_host_file"
     CustomLog \${APACHE_LOG_DIR}/access.log combined
 </VirtualHost>
 EOF
-# Enable the virtual host
-a2ensite "$domain_name.conf"
-# Restart Apache
-systemctl restart apache2
-echo "Creating index.php file to welcome message"
-#sudo echo "<?php echo 'Welcome to $domain_name'; ?>" > $document_root/public/index.php
-echo "Virtual host for $domain_name created successfully!"
+a2ensite "$domain_name.conf" # enable virtual host
+systemctl restart apache2 # restart apache
+check_last_command_execution "Virtual host for $domain_name created successfully!" "Failed to create virtual host for $domain_name"
 }
 # function to check domain or sub domain
-function check_domain {
-# Get the input from user
-input=$1
-# Split the input into an array using dot as the delimiter
-IFS='.' read -ra parts <<< "$input"
-# Check the number of parts in the input
-num_parts=${#parts[@]}
-if [[ $num_parts -gt 2 ]]; then
-    # The input is a subdomain and bold it
-    echo -e " The input \033[97;44;1m $input \033[m is a subdomain."
-    isSubdomain=true
-    # set isSubdomain to true globally
-    export isSubdomain=true
-
-elif [[ $num_parts -eq 2 ]]; then
-    echo -e "The input \033[97;44;1m $input \033[m is a domain."
-    isSubdomain=false
-    # set isSubdomain to false globally
-    export isSubdomain=false
-else
-    echo -e "\033[1;31mInvalid Input:\033[0m\033[97;44;1m $input \033[m.\033[1;31mPlease provide a valid domain or subdomain.\033[0m"
-    exit 1
-fi
-}
 function installSSL {
 domain_name=$1
+isSubdomain=$2
 echo "Installing Certbot first."
 sudo apt-get install certbot python3-certbot-apache -y
 check_last_command_execution "Certbot Installed Successfully" "Failed Certbot Installation"
 sudo a2enmod ssl
 sudo systemctl restart apache2
-# Split the input into an array using dot as the delimiter
-IFS='.' read -ra parts <<< "$domain_name"
-# Check the number of parts in the input
-num_parts=${#parts[@]}
-if [[ $num_parts -gt 2 ]]; then
-    # The input is a subdomain and bold it
-    echo -e " The input \033[97;44;1m $domain_name \033[m is a subdomain."
-    isSubdomain=true
-
-elif [[ $num_parts -eq 2 ]]; then
-    echo -e "The input \033[97;44;1m $domain_name \033[m is a domain."
-    isSubdomain=false
- 
-
-else
-    echo -e "\033[1;31mInvalid Input:\033[0m\033[97;44;1m $domain_name \033[m.\033[1;31mPlease provide a valid domain or subdomain.\033[0m"
-    exit 1
-fi
 if [ "$isSubdomain" = true ] ; then
 sudo certbot --apache -d $domain_name --register-unsafely-without-email --agree-tos -n
 else
 sudo certbot --apache -d $domain_name -d www.$domain_name --register-unsafely-without-email --agree-tos -n 
 fi
-# check if ssl certificate installed successfully
 if [ $? -eq 0 ]; then
-echo -e "\e[32mSSL Certificate Installed Successfully\e[0m"
+echo -e "\e[32mSSL Installed Successfully\e[0m"
 app_url="https://$domain_name"
 else
-echo -e "\e[31mFailed to Install SSL Certificate\e[0m"
+echo -e "\e[31mSSL Installation Failed\e[0m"
 app_url="http://$domain_name"
 fi
+echo "SET - APP Url is: $app_url"
 }
 # function to remove apache completely
 function remove_apache_completely {
@@ -291,8 +209,138 @@ sudo apt autoremove -y
 sudo rm -rf /etc/apache2
 echo -e "Apache is removed completely"
 }
-# last check to make sure everything is working fine
-# check if apache is running or not
+function add_ssh_known_hosts {
+# "Adding bitbucket.org to known hosts"
+echo "Adding bitbucket.org to known hosts"
+# create known_hosts file
+sudo truncate -s 0 ~/.ssh/known_hosts
+ssh-keygen -R bitbucket.org && curl https://bitbucket.org/site/ssh >> ~/.ssh/known_hosts && chmod 600 ~/.ssh/known_hosts && chmod 700 ~/.ssh
+check_last_command_execution "bitbucket.org added to known hosts" "Failed to add bitbucket.org to known hosts"
+}
+## Function to clean installation directories first
+function clean_installation_directories {
+echo "Cleaning Installation Directories"
+document_root=$1
+rm -rf $document_root/*  2> /dev/null # remove files
+rm -rf $document_root/.* 2> /dev/null # remove hidden files
+}
+## Function to clone from git 
+function clone_from_git {
+git_branch=$1
+document_root=$2
+add_ssh_known_hosts # call function to add bitbucket.org to known hosts
+cd $document_root
+apt install git -y # install git
+git clone  -b $git_branch git@bitbucket.org:techsmarters8333/smarterpanel-base.git .
+check_last_command_execution "Smarters Panel Cloned Successfully" "Smarters Panel Cloning Failed"
+}
+### Function to create .env File ####
+function create_env_file {
+echo "Creating .env file"
+document_root=$1
+app_url=$2
+database_name=$3
+database_user=$4
+database_user_password=$5
+sudo truncate -s 0 $document_root/.env
+cat >> $document_root/.env <<EOF
+APP_NAME="Smarters Panel"
+APP_ENV=local
+APP_KEY=base64:4OhoU51Pl13TVLJb6l2ngm7p9QyVH2yOwmE7Gd5Qm/E=
+APP_DEBUG=true
+APP_LOG_LEVEL=debug
+APP_URL=${app_url}
+
+DB_CONNECTION=mysql
+DB_HOST=localhost
+DB_PORT=3306
+DB_DATABASE=$database_name
+DB_USERNAME=$database_user
+DB_PASSWORD=$database_user_password
+
+BROADCAST_DRIVER=log
+CACHE_DRIVER=file
+SESSION_DRIVER=file
+QUEUE_DRIVER=sync
+
+REDIS_HOST=127.0.0.1
+REDIS_PASSWORD=null
+REDIS_PORT=6379
+
+MAIL_DRIVER=smtp
+MAIL_HOST=email-smtp.ap-south-1.amazonaws.com
+MAIL_PORT=587
+MAIL_USERNAME=AKIAZ6HORLNX6MJLRA52
+MAIL_PASSWORD="BAOjk/ZI5MaZwluDLBQLylMIjr+de8YnVIqmXVpD5MQu"
+# MAIL_ENCRYPTION=ssl
+MAIL_FROM_NAME="Smarter Panel"
+mail_from_address=support@smarterspanel.com
+
+PUSHER_APP_ID=
+PUSHER_APP_KEY=
+PUSHER_APP_SECRET=
+QUEUE_CONNECTION=database
+EOF
+}
+## Function to install Composer ##
+function install_composer {
+echo "Installing Composer"
+cd ~
+# install composer with no interaction
+echo "Installing Composer"
+curl -sS https://getcomposer.org/installer -o /tmp/composer-setup.php
+HASH=`curl -sS https://composer.github.io/installer.sig`
+php -r "if (hash_file('SHA384', '/tmp/composer-setup.php') === '$HASH') { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); } echo PHP_EOL;"
+sudo php /tmp/composer-setup.php --install-dir=/usr/local/bin --filename=composer --version=2.1.8 --quiet --no-interaction 
+check_last_command_execution "Composer Installed Successfully" "Composer Installation Failed.Exit the script"
+}
+## Function Node JS Installation ##
+function install_nodejs {
+echo "Installing NodeJS"
+# install nodejs
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt-get install -y nodejs
+check_last_command_execution "NodeJS Installed Successfully" "NodeJS Installation Failed.Exit the script"
+}
+### Function to Give Permissions to Laravel Directories ###
+function give_permissions_to_laravel_directories {
+echo "Giving Permissions to Laravel Directories"
+document_root=$1
+# Time to give the accurate permissions
+sudo chown -R www-data:www-data $document_root
+sudo chmod -R 755 $document_root
+# primission to laravel storage
+sudo chmod -R 777 $document_root/storage
+# primission to laravel bootstrap
+sudo chmod -R 777 $document_root/bootstrap
+# primission to laravel cache
+sudo chmod -R 777 $document_root/bootstrap/cache
+sudo chmod -R 777 $document_root/storage/logs/
+# Restart Apache
+sudo systemctl restart apache2
+}
+# Function to print a horizontal line
+print_horizontal_line() {
+    echo "-----------------------------------------"
+}
+
+# Function to print a vertical line
+print_vertical_line() {
+    echo "|                                       |"
+}
+# Function to print the GUI pattern
+print_gui_pattern() {
+app_url=$1
+print_horizontal_line
+print_vertical_line
+echo -e "|     \e[32mSmarters Panel Installed Successfully\e[0m    |"
+echo "|         App URL: $app_url                                  |"
+echo "|         Admin APP URL: $app_url/admin                      |"
+echo "|         Admin Username: admin@smarterspanel.com            |"
+echo "|         Admin Password: password                           |"
+print_vertical_line
+print_horizontal_line
+}
 function final_check {
 echo -e "\e[32mChecking if Apache is running or not\e[0m"
 apache_running=$(systemctl status apache2 | grep -c "active (running)")
@@ -341,405 +389,110 @@ echo -e "\e[32mNPM is installed at: $npm_path\e[0m"
 else
 echo -e "\e[31mNPM is not installed\e[0m"
 fi
-# check if Smarters Panel cloned and installed successfully
-echo -e "\e[32mChecking if Smarters Panel cloned and installed successfully\e[0m"
-if [ -d "$document_root/vendor" ] && [ -d "$document_root/node_modules" ]; then
-echo -e "\e[32mSmarters Panel cloned and installed successfully\e[0m"
-else
-echo -e "\e[31mSmarters Panel cloned and installed failed\e[0m"
-fi
 }
-
-# check if repo password is provided or not
-echo -e "Checking if repo password is provided by user with -p option"
-if [ -z "$repo_pass" ]
-then
-echo -e "\033[33mRepo Password not provided\033[0m"
-repo_pass=""
-else
-echo -e "\033[33mRepo Password is provided\033[0m"
-repo_pass=":$repo_pass"
-fi
-# Check if the script is running as root or not
-if [ "$EUID" -ne 0 ]; then
-echo -e "\e[31mPlease run this script as root\e[0m"
-exit 1
-fi
-# Update the repository
-echo -e "\e[32mUpdating the repository\e[0m"
-sudo apt-get update -y 
-# check if apt-get update successfully
-if [ $? -eq 0 ]; then
-echo -e "\e[32mRepository Updated Successfully\e[0m"
-else
-# show error message in red color and exit the script
-echo -e "\e[31mRepository Update Failed\e[0m"
-fi
-# Install Apache, MySQL, PHP
-echo -e "\e[32mInstalling Apache, MySQL, PHP\e[0m"
-################# Install Apache ##################
-echo "################# Install Apache ##################"
-# check if apache is already installed
-apache=$(dpkg-query -W -f='${Status}' apache2 2>/dev/null | grep -c "ok installed")
-if [ $apache -eq 1 ]; then
-echo -e "\e[32mApache is already installed\e[0m"
-# check if apache is running or not
-echo -e "\e[32mChecking if Apache is running or not\e[0m"
-apache_running=$(systemctl status apache2 | grep -c "active (running)")
-if [ $apache_running -eq 1 ]; then
-echo -e "\e[32mApache is running\e[0m"
-#nothing to do as apache is already installed and running
-else
-echo -e "\e[31mApache is not running\e[0m"
-# remove apache completely
-echo "Removing Apache completely with configuration files"
-# call function to remove apache completely
-remove_apache_completely
-# call function to install apache
+########### FUNCTION to Install Smarters Panel ###########
+function install_smarters_panel {
+domain_name=$1
+document_root=$2
+git_branch=$3
+mysql_root_pass=$4
+isSubdomain=$5
+desired_version="8.1" # desired version of php
 install_apache
-fi # Closed if "Apache is running"
-else # Apache is already installed else condition
-# call function to install apache
-install_apache
-fi # main if to check if apache is already installed
-
-############### Installing MySQL Server ##################
-echo "############### Installing MySQL Server ##################"
-# check if mysql_root_pass is empty or not
-if [ ! -z "$mysql_root_pass" ]; then  
-echo -e "\e[32mInstalling MySQL\e[0m"
-MYSQL_ROOT_PASSWORD=$mysql_root_pass
-# check if mysql is already installed and running
-mysql=$(dpkg-query -W -f='${Status}' mysql-server 2>/dev/null | grep -c "ok installed")
-if [ $mysql -eq 1 ]; then
-echo -e "\e[32mMySQL is already installed\e[0m"
-# check if mysql is running or not
-echo -e "\e[32mChecking if MySQL is running or not\e[0m"
-mysql_running=$(systemctl status mysql | grep -c "active (running)")
-if [ $mysql_running -eq 1 ]; then
-echo -e "\e[32mMySQL is running\e[0m"
-# call function to create database and database user
-create_database_and_database_user $MYSQL_ROOT_PASSWORD
-else
-echo -e "\e[31mMySQL is not running\e[0m"
-echo -e "\e[32mStarting MySQL\e[0m"
-sudo systemctl start mysql
-mysql_running=$(systemctl status mysql | grep -c "active (running)")
-if [ $mysql_running -eq 1 ]; then
-echo -e "\e[32mMySQL is running now \e[0m"
-# call function to create database and database user
-create_database_and_database_user $MYSQL_ROOT_PASSWORD
-else
-echo -e "\e[31mMySQL is not running\e[0m"
-# remove mysql completely
-echo "Removing MySQL completely with configuration files"
-# call function to remove mysql completely
-remove_mysql_completely
-# call function to install mysql with defined password
-install_mysql_with_defined_password $MYSQL_ROOT_PASSWORD
-create_database_and_database_user $MYSQL_ROOT_PASSWORD
-fi # Closed if "Mysql is running now
-fi # Closed if mysql is running or not
-else # MySQL is already installed else condition
-# call function to install mysql with defined password
-install_mysql_with_defined_password $MYSQL_ROOT_PASSWORD
-create_database_and_database_user $MYSQL_ROOT_PASSWORD
-fi # main if to check if mysql is already installed
-else # mysql_root_pass if condition empty or not
-# check if it's already installed
-mysql=$(dpkg-query -W -f='${Status}' mysql-server 2>/dev/null | grep -c "ok installed")
-if [ $mysql -eq 1 ]; then
-echo -e "\e[32mMySQL is already installed\e[0m"
-# check if smarters panel is already installed by check .env file
-if [ ! -f "/$document_root/.env" ]; then
-echo -e "Smarters Panel is not installed"
-echo -e "\e[31mMySQL Server already installed but Root Password is not provided by user with -m option\e[0m"
-exit 1
-fi
-# # remove mysql completely
-# echo "Removing MySQL completely with configuration files"
-# # call function to remove mysql completely
-# remove_mysql_completely
-# # call function to install mysql with defined password
-# install_mysql_with_defined_password $MYSQL_ROOT_PASSWORD
-# create_database_and_database_user $MYSQL_ROOT_PASSWORD
-else
-MYSQL_ROOT_PASSWORD="$(openssl rand -base64 12)"
-install_mysql_with_defined_password $MYSQL_ROOT_PASSWORD
-create_database_and_database_user $MYSQL_ROOT_PASSWORD
-fi 
-fi # mysql_root_pass if condition empty or not
-################### Install PHP ##################
-echo "################### Install PHP ##################"
-# check if PHP is already installed
-desired_version="8.1"
-#check php is installed or not
-php_path=$(which php)
-if [ -x "$php_path" ]; then
-echo "PHP is installed at: $php_path"
-# check if php version is empty
-echo "Comparing PHP version"
-php_version=$(php -r 'echo PHP_VERSION;')
-if [[ $php_version == *"$desired_version"* ]]; then
-echo -e "\e[32mPHP Version is $php_version\e[0m"
-# nothing to do as PHP is already installed with desired version
-else
-echo -e "\e[31mPHP Version is $php_version that is not desired one\e[0m"
-# installed desired version of php
-echo -e "\e[32mInstalling PHP $desired_version\e[0m"
+install_mysql_with_defined_password $mysql_root_pass
+create_database_and_database_user $mysql_root_pass
 install_php_with_desired_version $desired_version
-sudo a2dismod php$php_version
-sudo a2enmod php$desired_version
-sudo update-alternatives --set php /usr/bin/php$desired_version
-fi
-else
-echo -e "\e[32mPHP is not installed\e[0m"
-install_php_with_desired_version $desired_version
-fi # main if to check if php is already installed
-echo -e "\e[32mRestarting Apache after PHP installation\e[0m"
-sudo systemctl restart apache2
-echo -e "Checking if domain name is provided by user with -d option"
-if [ ! -z "$domain_name" ]; then
-echo -e "\e[32mDomain Name is provided by user with -d option\e[0m"
-create_virtual_host $domain_name
-app_url="http://$domain_name"
-################## Free SSL Letsencrypt Installing ##################
-echo "################## Free SSL Letsencrypt Installing ##################"
-echo "Free SSL Letsencrypt Installing..."
-if [ -f "/etc/letsencrypt/live/${domain_name}/fullchain.pem" ]; then
-echo -e "\e[32mSSL Certificate already exists\e[0m"
-app_url="https://$domain_name"
-else
-installSSL $domain_name
-fi
-else
-echo -e "\e[32mDomain Name is not provided by user with option -d So, we are installing with IP Address\e[0m"
-domain_name=$ip_address
-create_virtual_host $domain_name
-app_url="http://$domain_name"
-fi
-# Enable the virtual host
-sudo a2ensite $domain_name.conf
-# Disable the default virtual host
-sudo a2dissite 000-default.conf
-# Restart Apache
-sudo systemctl restart apache2
-# check if virtual host created successfully  and enable site
-echo "########## Installing Smarters Panel #############"
-########## Installing Smarters Panel #############
-# check if laravel is installed already or not
-# check vendor and node modules folder exists or not
-apt install git -y
-if [ $? -eq 0 ]; then
-echo -e "\e[32mGIT Installed Successfully\e[0m"
-else
-echo -e "\e[31mGIT Installation Failed\e[0m"
-exit 1
-fi
-# # check if ssh key is provided or not
-# echo -e "Checking if ssh key is provided by user with -s option"
-# if [ -z "$id_rsa" ] || [ -z "$id_rsa_pub" ]
-# then
-# echo -e "SSH Key not provided"
-# id_rsa=""
-# id_rsa_pub=""
-# else
-# # add ssh key to the host id_rsa file
-# echo "Adding SSH Key to the host"
-# sudo truncate -s 0 ~/.ssh/id_rsa
-# cat >> ~/.ssh/id_rsa <<EOF
-# $id_rsa
-# EOF
-# sudo chmod 600 ~/.ssh/id_rsa
-# # add ssh key to the host id_rsa.pub file
-# echo "Adding SSH Key to the host"
-# sudo truncate -s 0 ~/.ssh/id_rsa.pub
-# cat >> ~/.ssh/id_rsa.pub <<EOF
-# $id_rsa_pub
-# EOF
-# sudo chmod 600 ~/.ssh/id_rsa.pub
-# fi
-
-# "Adding bitbucket.org to known hosts"
-echo "Adding bitbucket.org to known hosts"
-# create known_hosts file
-sudo truncate -s 0 ~/.ssh/known_hosts
-ssh-keygen -R bitbucket.org && curl https://bitbucket.org/site/ssh >> ~/.ssh/known_hosts && chmod 600 ~/.ssh/known_hosts && chmod 700 ~/.ssh 
-if [ -d "$document_root/vendor" ] && [ -d "$document_root/node_modules" ]; then
-echo -e "\e[32mSmarters Panel already installed\e[0m"
-# git pull
-echo "Updating the Smarters Panel"
+create_virtual_host $domain_name $document_root
+installSSL $domain_name $isSubdomain
+clean_installation_directories $document_root # call function to clean installation directories
+clone_from_git $git_branch $document_root # call function to clone from git
+mysql -u $database_user -p$database_user_password -e "show databases;" 2> /dev/null
+check_last_command_execution " MySQL Connection is Fine. Green Flag to create .env file" "MySQL Connection Failed.Exit the script"
+create_env_file $document_root $app_url $database_name $database_user $database_user_password
+install_composer
+cd $document_root # change directory to document root
+# install composer
+composer install --no-interaction
+check_last_command_execution "Composer Installed Successfully" "Composer Installation Failed.Exit the script"
+install_nodejs
+npm install 
+check_last_command_execution "NPM Installed Successfully" "NPM Installation Failed.Exit the script"
+npm run dev
+check_last_command_execution "NPM Run Dev Successfully" "NPM Run Dev Failed.Exit the script"
+php artisan key:generate
+check_last_command_execution "Artisan Key Generated Successfully" "Artisan Key Generation Failed.Exit the script"
+php artisan migrate
+check_last_command_execution "Artisan Migrate Successfully" "Artisan Migrate Failed.Exit the script"
+php artisan db:seed
+check_last_command_execution "Artisan Seed Successfully" "Artisan Seed Failed.Exit the script"
+php artisan storage:link
+check_last_command_execution "Artisan Storage Link Successfully" "Artisan Storage Link Failed.Exit the script"
+give_permissions_to_laravel_directories $document_root
+# run artisan optimize
+php artisan optimize:clear
+check_last_command_execution "Artisan Optimize Successfully" "Artisan Optimize Failed.Exit the script"
+final_check # call function to check if everything is working fine
+print_gui_pattern $app_url
+rm -rf /root/server-setup.sh 2> /dev/null # remove files
+}
+# Function to update the Smarters Panel on Commit
+function update_smarters_panel {
+echo "Updating the Smarters Panel on Commit"
+document_root=$1
+git_branch=$2
 cd $document_root
 chown -R $USER:$USER $document_root # change ownership to current user for clonning
 # rm -rf smarterpanel-base
 git pull origin $git_branch
-if [ $? -eq 0 ]; then
-echo -e "\e[32mSmarters Panel updated successfully\e[0m"
-else
-echo -e "\e[31mSmarters Panel updating failed\e[0m"
-fi
-#git clone https://techsmarters${repo_pass}@bitbucket.org/techsmarters8333/smarterpanel-base.git
-# rsync -av smarterpanel-base $document_root
-# rm -rf smarterpanel-base
-INSTALLTION_TYPE="update"
-else
-cd $document_root
-# remove existing files
-rm -rf $document_root/*  2> /dev/null # remove files
-rm -rf $document_root/.* 2> /dev/null # remove hidden files
-# git clone https://techsmarters${repo_pass}@bitbucket.org/techsmarters8333/smarterpanel-base.git
-git clone  -b $git_branch git@bitbucket.org:techsmarters8333/smarterpanel-base.git .
-if [ $? -eq 0 ]; then
-echo -e "\e[32mSmarters Panel clonned successfully\e[0m"
-else
-echo -e "\e[31mSmarters Panel clonning failed\e[0m"
-exit 1
-fi
-# mv -f smarterpanel-base/* $document_root
-# rm -rf smarterpanel-base
-# create .env file
-echo "fetching mysql details from file"
-get_mysql_details_from_file
-echo "Creating .env file"
-sudo truncate -s 0 $document_root/.env
-cat >> $document_root/.env <<EOF
-APP_NAME="Smarters Panel"
-APP_ENV=local
-APP_KEY=base64:4OhoU51Pl13TVLJb6l2ngm7p9QyVH2yOwmE7Gd5Qm/E=
-APP_DEBUG=true
-APP_LOG_LEVEL=debug
-APP_URL=${app_url}
-
-DB_CONNECTION=mysql
-DB_HOST=localhost
-DB_PORT=3306
-DB_DATABASE=$database_name
-DB_USERNAME=$database_user
-DB_PASSWORD=$database_user_password
-
-BROADCAST_DRIVER=log
-CACHE_DRIVER=file
-SESSION_DRIVER=file
-QUEUE_DRIVER=sync
-
-REDIS_HOST=127.0.0.1
-REDIS_PASSWORD=null
-REDIS_PORT=6379
-
-MAIL_DRIVER=smtp
-MAIL_HOST=email-smtp.ap-south-1.amazonaws.com
-MAIL_PORT=587
-MAIL_USERNAME=AKIAZ6HORLNX6MJLRA52
-MAIL_PASSWORD="BAOjk/ZI5MaZwluDLBQLylMIjr+de8YnVIqmXVpD5MQu"
-# MAIL_ENCRYPTION=ssl
-MAIL_FROM_NAME="Smarter Panel"
-mail_from_address=support@smarterspanel.com
-
-PUSHER_APP_ID=
-PUSHER_APP_KEY=
-PUSHER_APP_SECRET=
-QUEUE_CONNECTION=database
-EOF
-#sudo chown -R www-data:www-data $document_root
-sudo chmod -R 755 $document_root
-cd ~
-# install composer with no interaction
-echo "Installing Composer"
-curl -sS https://getcomposer.org/installer -o /tmp/composer-setup.php
-HASH=`curl -sS https://composer.github.io/installer.sig`
-php -r "if (hash_file('SHA384', '/tmp/composer-setup.php') === '$HASH') { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); } echo PHP_EOL;"
-sudo php /tmp/composer-setup.php --install-dir=/usr/local/bin --filename=composer --version=2.1.8 --quiet --no-interaction 
-cd $document_root
-# install composer
-composer install --no-interaction
-#composer update --no-interaction
-# check if composer install successfully
-if [ $? -eq 0 ]; then
-echo -e "\e[32mComposer Installed Successfully\e[0m"
-else
-# show error message in red color and exit the script
-echo -e "\e[31mComposer Installation Failed\e[0m"
-exit 1
-fi
-# install nodejs
-curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-sudo apt-get install -y nodejs
-# check if nodejs install successfully
-if [ $? -eq 0 ]; then
-echo -e "\e[32mNodeJS Installed Successfully\e[0m"
-else
-# show error message in red color and exit the script
-echo -e "\e[31mNodeJS Installation Failed\e[0m"
-exit 1
-fi
-cd $document_root
-npm install 
-# check if npm install successfully
-if [ $? -eq 0 ]; then
-echo -e "\e[32mNPM Installed Successfully\e[0m"
-else
-echo -e "\e[31mNPM Installation Failed\e[0m"
-exit 1
-fi
-# npm run dev
-npm run dev
-# check if npm run dev successfully
-if [ $? -eq 0 ]; then
-echo -e "\e[32mNPM Run Dev Successfully\e[0m"
-else
-echo -e "\e[31mNPM Run Dev Failed\e[0m"
-exit 1
-fi
-php artisan key:generate
-INSTALLTION_TYPE="install"
-fi # main if to check if laravel is installed already or not
+check_last_command_execution "Smarters Panel Updated Successfully" "Smarters Panel Update Failed.Exit the script"
 php artisan migrate
-# check if artisan migrate successfully
-if [ $? -eq 0 ]; then
-echo -e "\e[32mArtisan Migrate Successfully\e[0m"
-else
-echo -e "\e[31mArtisan Migrate Failed\e[0m"
-exit 1
-fi
-# check if laravel is installed successfully
-# if [ ! -f "$document_root/composer.json" ] && [ ! -d "$document_root/node_modules" ]; then
-# php artisan db:seed
-# fi
-if [ "$INSTALLTION_TYPE" = "install" ] ; then
-php artisan db:seed
-php artisan storage:link
-fi
-# Time to give the accurate permissions
-sudo chown -R www-data:www-data $document_root
-sudo chmod -R 755 $document_root
-# primission to laravel storage
-sudo chmod -R 777 $document_root/storage
-# primission to laravel bootstrap
-sudo chmod -R 777 $document_root/bootstrap
-# primission to laravel cache
-sudo chmod -R 777 $document_root/bootstrap/cache
-sudo chmod -R 777 $document_root/storage/logs/
-# Restart Apache
-sudo systemctl restart apache2
-# run artisan optimize 
+check_last_command_execution "Artisan Migrate Successfully" "Artisan Migrate Failed.Exit the script"
+# run artisan optimize
 php artisan optimize:clear
-# check if artisan optimize successfully
-if [ $? -eq 0 ]; then
-echo -e "\e[32mArtisan Optimize Successfully\e[0m"
-else
-echo -e "\e[32mArtisan Optimize Failed\e[0m"
+check_last_command_execution "Artisan Optimize Successfully" "Artisan Optimize Failed.Exit the script"
+# give permissions to laravel directories
+give_permissions_to_laravel_directories $document_root
+}
+################### Start Script ##################
+echo -e "\e[1;43mWelcome to Smarters Panel Installation with LAMP\e[0m"
+while getopts ":d:m:b:" o
+do
+case "${o}" in
+d) domain_name=${OPTARG};;
+m) mysql_root_pass=${OPTARG};;
+b) git_branch=${OPTARG};;
+esac
+done
+# Define Some Variables
+bold=$(tput bold)
+normal=$(tput sgr0)
+isMasked=false # by default it's false to show credentials in the logs
+# Start logging the script
+echo -e "\033[33mLogging the script into server-setup-$domain_name.log\e[0m"
+exec > >(tee -i server-setup-$domain_name.log)
+exec 2>&1
+# Echo the options provided by user
+echo "###### Options Provided by User ######"
+[[ ! -z $domain_name ]] && echo "${bold}domain_name:${normal}" $domain_name
+if [ "$isMasked" = false ] ; then
+[[ ! -z $mysql_root_pass ]] && echo "${bold}mysql_root_pass:${normal}" $mysql_root_pass
 fi
-final_check # call function to check if everything is working fine
-#  clear files 
-rm -rf /root/database_details.txt 2> /dev/null # remove files
-# clear installation files
-rm -rf /root/server-setup.sh 2> /dev/null # remove files
-# show success message in green color
-
-echo -e "\e[32mSmarters Panel Installed Successfully\e[0m"
-# show user the panel url
-echo "You can access your smarters panel at $app_url"
-echo "You can access your admin panel at $app_url/admin"
-echo "Your Admin Username is admin@smarterspanel.com"
-echo "Your Admin Password is password"
-echo "You can access your client panel at $app_url/auth/signin"
+[[ ! -z $git_branch ]] && echo "${bold}git_branch:${normal}" $git_branch
+echo "###### Options Provided by User ######"
+set_check_valid_domain_name $domain_name 
+echo "SET - ${bold}Domain Name is: ${normal} $domain_name"
+document_root="/var/www/$domain_name" #Till here domain either is domain /subdomain OR IP Address 
+echo "SET - ${bold}Document Root is: ${normal} $document_root"
+########### Smarters Panel Installation &  Updating Started  #####
+echo "##### Checking if Smarters Panel is already installed or not #####"
+# check if laravel is installed already or not
+if [ -f "$document_root/.env" ] && [ -d "$document_root/node_modules" ]; then
+echo -e "\e[32mSmarters Panel is already installed\e[0m"
+## Update the Smarters Panel ####
+update_smarters_panel $document_root $git_branch
+else
+echo " ##### Installing Smarters Panel #####"
+install_smarters_panel $domain_name $document_root $git_branch $mysql_root_pass $isSubdomain
+php artisan migrate
+fi
+########### Smarters Panel Installation &  Updating Ended  #####
