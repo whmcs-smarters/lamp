@@ -479,10 +479,6 @@ done
 bold=$(tput bold)
 normal=$(tput sgr0)
 isMasked=false # by default it's false to show credentials in the logs
-# Start logging the script
-echo -e "\033[33mLogging the script into server-setup-$domain_name.log\e[0m"
-exec > >(tee -i server-setup-$domain_name.log)
-exec 2>&1
 # Echo the options provided by user
 echo "###### Options Provided by User ######"
 [[ ! -z $domain_name ]] && echo "${bold}domain_name:${normal}" $domain_name
@@ -492,6 +488,10 @@ fi
 [[ ! -z $git_branch ]] && echo "${bold}git_branch:${normal}" $git_branch
 echo "###### Options Provided by User ######"
 set_check_valid_domain_name $domain_name 
+# Start logging the script
+echo -e "\033[33mLogging the script into server-setup-$domain_name.log\e[0m"
+exec > >(tee -i server-setup-$domain_name.log)
+exec 2>&1
 # if git_branch is empty then set it to master
 if [ -z "$git_branch" ]
 then
