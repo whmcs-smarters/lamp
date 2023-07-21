@@ -414,12 +414,6 @@ clean_installation_directories $document_root # call function to clean installat
 clone_from_git $git_branch $document_root # call function to clone from git
 mysql -u $database_user -p$database_user_password -e "show databases;" 2> /dev/null
 check_last_command_execution " MySQL Connection is Fine. Green Flag to create .env file" "MySQL Connection Failed.Exit the script"
-## print database details to file
-touch /root/database_details.txt
-echo "database_name=$database_name" > /root/database_details.txt
-echo "database_user=$database_user" >> /root/database_details.txt
-echo "database_user_password=$database_user_password" >> /root/database_details.txt
-exit;
 create_env_file $document_root $app_url $database_name $database_user $database_user_password
 install_composer
 cd $document_root # change directory to document root
