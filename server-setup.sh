@@ -330,14 +330,14 @@ print_horizontal_line() {
 
 # Function to print a vertical line
 print_vertical_line() {
-    echo "|                                       |"
+echo "|                                                            |"
 }
 # Function to print the GUI pattern
 print_gui_pattern() {
 app_url=$1
 print_horizontal_line
 print_vertical_line
-echo -e "|     \e[32mSmarters Panel Installed Successfully\e[0m    |"
+echo "|     Smarters Panel Installed Successfully                  |"
 echo "|         App URL: $app_url                                  |"
 echo "|         Admin APP URL: $app_url/admin                      |"
 echo "|         Admin Username: admin@smarterspanel.com            |"
