@@ -243,6 +243,9 @@ function create_env_file {
 echo "Creating .env file"
 document_root=$1
 app_url=$2
+database_name=$3
+database_user=$4
+database_user_password=$5
 sudo truncate -s 0 $document_root/.env
 cat >> $document_root/.env <<EOF
 APP_NAME="Smarters Panel"
