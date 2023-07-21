@@ -140,6 +140,7 @@ echo -e "\e[31mPHP Version is $php_version that is not desired one\e[0m"
 sudo a2dismod php$php_version
 sudo a2enmod php$desired_version
 sudo update-alternatives --set php /usr/bin/php$desired_version
+fi
 }
 # function to remove mysql completely
 function remove_mysql_completely {
