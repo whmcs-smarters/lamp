@@ -1,5 +1,6 @@
 #!/bin/bash
 
+########### Functions ###########
 # This functino first check if domain is empty or not then check if it's valid or not then it set the domain namea and isSubdomain variable too
 function check_domain_or_subdomain {
 # Get the input from user
@@ -19,7 +20,7 @@ else
     echo -e "\033[1;31mInvalid Input:\033[0m\033[97;44;1m $input \033[m.\033[1;31mPlease provide a valid domain or subdomain.\033[0m"
     exit 1
 fi
-echo "SET - ${bold}isSubomain: ${normal} $isSubomain"
+echo "SET - ${bold}isSubomain: ${normal} $isSubdomain"
 }
 function set_check_valid_domain_name {
 if [ -z "$1" ]
@@ -33,9 +34,10 @@ else
 echo -e "\033[33mDomain Name is provided\033[0m"
 check_domain_or_subdomain $1
 domain_name=$1
+sslInstallation=true
+app_url="http://$domain_name"
 fi
 }
-# Functions Declaration
 # function to check if last command executed successfully or not with message
 function check_last_command_execution {
 if [ $? -eq 0 ]; then
@@ -241,9 +243,6 @@ function create_env_file {
 echo "Creating .env file"
 document_root=$1
 app_url=$2
-database_name=$3
-database_user=$4
-database_user_password=$5
 sudo truncate -s 0 $document_root/.env
 cat >> $document_root/.env <<EOF
 APP_NAME="Smarters Panel"
@@ -412,6 +411,12 @@ clean_installation_directories $document_root # call function to clean installat
 clone_from_git $git_branch $document_root # call function to clone from git
 mysql -u $database_user -p$database_user_password -e "show databases;" 2> /dev/null
 check_last_command_execution " MySQL Connection is Fine. Green Flag to create .env file" "MySQL Connection Failed.Exit the script"
+## print database details to file
+touch /root/database_details.txt
+echo "database_name=$database_name" > /root/database_details.txt
+echo "database_user=$database_user" >> /root/database_details.txt
+echo "database_user_password=$database_user_password" >> /root/database_details.txt
+exit;
 create_env_file $document_root $app_url $database_name $database_user $database_user_password
 install_composer
 cd $document_root # change directory to document root
@@ -484,9 +489,16 @@ fi
 [[ ! -z $git_branch ]] && echo "${bold}git_branch:${normal}" $git_branch
 echo "###### Options Provided by User ######"
 set_check_valid_domain_name $domain_name 
+# if git_branch is empty then set it to master
+if [ -z "$git_branch" ]
+then
+echo -e "\033[33m Provide Git Branch So, It can not be empty \033[0m"
+exit 1
+fi
 echo "SET - ${bold}Domain Name is: ${normal} $domain_name"
 document_root="/var/www/$domain_name" #Till here domain either is domain /subdomain OR IP Address 
 echo "SET - ${bold}Document Root is: ${normal} $document_root"
+echo "SET - ${bold}Git Branch is: ${normal} $git_branch"
 ########### Smarters Panel Installation &  Updating Started  #####
 echo "##### Checking if Smarters Panel is already installed or not #####"
 # check if laravel is installed already or not
@@ -495,7 +507,7 @@ echo -e "\e[32mSmarters Panel is already installed\e[0m"
 ## Update the Smarters Panel ####
 update_smarters_panel $document_root $git_branch
 else
-echo " ##### Installing Smarters Panel #####"
+echo "##### Installing Smarters Panel #####"
 install_smarters_panel $domain_name $document_root $git_branch $mysql_root_pass $isSubdomain
 
 fi
