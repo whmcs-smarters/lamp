@@ -337,11 +337,11 @@ print_gui_pattern() {
 app_url=$1
 print_horizontal_line
 print_vertical_line
-echo "|     Smarters Panel Installed Successfully                  |"
-echo "|         App URL: $app_url                                  |"
-echo "|         Admin APP URL: $app_url/admin                      |"
-echo "|         Admin Username: admin@smarterspanel.com            |"
-echo "|         Admin Password: password                           |"
+echo "|     Smarters Panel Installed"
+echo "|     App URL: $app_url"                   
+echo "|     Admin APP URL: $app_url/admin"
+echo "|     Admin Username: admin@smarterspanel.com"  
+echo "|     Admin Password: password"               
 print_vertical_line
 print_horizontal_line
 }
@@ -506,6 +506,5 @@ update_smarters_panel $document_root $git_branch
 else
 echo "##### Installing Smarters Panel #####"
 install_smarters_panel $domain_name $document_root $git_branch $mysql_root_pass $isSubdomain
-
 fi
 ########### Smarters Panel Installation &  Updating Ended  #####
