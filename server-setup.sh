@@ -28,6 +28,7 @@ echo -e "\033[33mDomain Name not provided So, We are using IP Address \033[0m"
 ip_address=$(curl -s http://checkip.amazonaws.com)
 domain_name=$ip_address
 sslInstallation=false
+app_url="http://$domain_name"
 else
 echo -e "\033[33mDomain Name is provided\033[0m"
 check_domain_or_subdomain $1
@@ -404,7 +405,9 @@ install_mysql_with_defined_password $mysql_root_pass
 create_database_and_database_user $mysql_root_pass
 install_php_with_desired_version $desired_version
 create_virtual_host $domain_name $document_root
+if [ "$sslInstallation" = true ] ; then
 installSSL $domain_name $isSubdomain
+fi 
 clean_installation_directories $document_root # call function to clean installation directories
 clone_from_git $git_branch $document_root # call function to clone from git
 mysql -u $database_user -p$database_user_password -e "show databases;" 2> /dev/null
@@ -428,11 +431,11 @@ php artisan db:seed
 check_last_command_execution "Artisan Seed Successfully" "Artisan Seed Failed.Exit the script"
 php artisan storage:link
 check_last_command_execution "Artisan Storage Link Successfully" "Artisan Storage Link Failed.Exit the script"
-give_permissions_to_laravel_directories $document_root
 # run artisan optimize
 php artisan optimize:clear
 check_last_command_execution "Artisan Optimize Successfully" "Artisan Optimize Failed.Exit the script"
 final_check # call function to check if everything is working fine
+give_permissions_to_laravel_directories $document_root
 print_gui_pattern $app_url
 rm -rf /root/server-setup.sh 2> /dev/null # remove files
 }
@@ -494,6 +497,6 @@ update_smarters_panel $document_root $git_branch
 else
 echo " ##### Installing Smarters Panel #####"
 install_smarters_panel $domain_name $document_root $git_branch $mysql_root_pass $isSubdomain
-php artisan migrate
+
 fi
 ########### Smarters Panel Installation &  Updating Ended  #####
