@@ -46,6 +46,7 @@ else
 echo -e "\e[31m$2\e[0m"
 # remove files
 rm -rf /root/server-setup.sh 2> /dev/null # remove files
+echo "Check Logs for more details: server-setup-$domain_name.log"
 exit 1
 fi
 }
