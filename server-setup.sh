@@ -44,6 +44,8 @@ if [ $? -eq 0 ]; then
 echo -e "\e[32m$1\e[0m"
 else
 echo -e "\e[31m$2\e[0m"
+# remove files
+rm -rf /root/server-setup.sh 2> /dev/null # remove files
 exit 1
 fi
 }
