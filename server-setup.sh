@@ -426,7 +426,7 @@ check_last_command_execution "Composer Installed Successfully" "Composer Install
 install_nodejs
 npm install 
 check_last_command_execution "NPM Installed Successfully" "NPM Installation Failed.Exit the script"
-npm run dev
+npm run prod
 check_last_command_execution "NPM Run Dev Successfully" "NPM Run Dev Failed.Exit the script"
 php artisan key:generate
 check_last_command_execution "Artisan Key Generated Successfully" "Artisan Key Generation Failed.Exit the script"
@@ -455,6 +455,8 @@ chown -R $USER:$USER $document_root # change ownership to current user for clonn
 git stash
 git pull origin $git_branch
 check_last_command_execution "Smarters Panel Updated Successfully" "Smarters Panel Update Failed.Exit the script"
+npm run prod
+check_last_command_execution "NPM Run Prod Successfully" "NPM Run Prod Failed.Exit the script"
 php artisan migrate
 check_last_command_execution "Artisan Migrate Successfully" "Artisan Migrate Failed.Exit the script"
 # run artisan optimize
