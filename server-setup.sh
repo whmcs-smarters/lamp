@@ -505,7 +505,7 @@ echo "SET - ${bold}Git Branch is: ${normal} $git_branch"
 ########### Smarters Panel Installation &  Updating Started  #####
 echo "##### Checking if Smarters Panel is already installed or not #####"
 # check if laravel is installed already or not
-if [ -f "$document_root/.env" ] && [ -d "$document_root/node_modules" ]; then
+if [ -f "$document_root/.env" ] && [ -f "$document_root/server.php" ]; then
 echo -e "\e[32mSmarters Panel is already installed\e[0m"
 ## Update the Smarters Panel ####
 update_smarters_panel $document_root $git_branch
