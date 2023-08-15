@@ -424,7 +424,8 @@ cd $document_root # change directory to document root
 composer install --no-interaction
 check_last_command_execution "Composer Installed Successfully" "Composer Installation Failed.Exit the script"
 install_nodejs
-npm install 
+#npm install 
+npm install --legacy-peer-deps
 check_last_command_execution "NPM Installed Successfully" "NPM Installation Failed.Exit the script"
 npm run prod
 #npm run dev
