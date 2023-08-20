@@ -404,7 +404,8 @@ document_root=$2
 git_branch=$3
 mysql_root_pass=$4
 isSubdomain=$5
-desired_version="8.1" # desired version of php
+desired_version="8.1" # desired version of PHP
+apt update -yq
 install_apache
 install_mysql_with_defined_password $mysql_root_pass
 create_database_and_database_user $mysql_root_pass
@@ -424,8 +425,8 @@ cd $document_root # change directory to document root
 composer install --no-interaction
 check_last_command_execution "Composer Installed Successfully" "Composer Installation Failed.Exit the script"
 install_nodejs
-#npm install 
-npm install --legacy-peer-deps
+npm install 
+#npm install --legacy-peer-deps
 check_last_command_execution "NPM Installed Successfully" "NPM Installation Failed.Exit the script"
 npm run prod
 #npm run dev
