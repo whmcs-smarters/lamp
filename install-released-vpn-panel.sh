@@ -401,7 +401,6 @@ cd $document_root # change directory to document root
 # install composer
 composer install --no-interaction
 check_last_command_execution "Composer Installed Successfully" "Composer Installation Failed.Exit the script"
-install_nodejs
 php artisan key:generate
 check_last_command_execution "Artisan Key Generated Successfully" "Artisan Key Generation Failed.Exit the script"
 php artisan migrate
