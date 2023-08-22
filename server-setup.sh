@@ -75,9 +75,9 @@ sudo debconf-set-selections <<< "mysql-server mysql-server/root_password_again p
 sudo apt-get install mysql-server -y
 check_last_command_execution "MySQL Installed Successfully" "MySQL Installation Failed"
 echo "MySQL Version: $(mysql -V | awk '{print $1,$2,$3}')"
-if [ "$isMasked" = false ] ; then
+# if [ "$isMasked" == false ] ; then
 echo "MySQL Root Password: $MYSQL_ROOT_PASSWORD"
-fi
+# fi
 }
 # function to create random database name
 generate_random_database_name() {
