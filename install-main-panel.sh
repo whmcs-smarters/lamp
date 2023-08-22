@@ -50,6 +50,84 @@ echo "Check Logs for more details: install-main-vpn-panel-$domain_name.log"
 exit 1
 fi
 }
+# function to install apache
+function install_apache {
+# Install Apache
+echo -e "\e[32mInstalling Apache\e[0m"
+sudo apt-get install apache2 -y
+check_last_command_execution "Apache Installed Successfully" "Apache Installation Failed"
+# Enable Apache Mods
+echo -e "\e[32mEnabling Apache Mods\e[0m"
+sudo a2enmod rewrite
+check_last_command_execution "Apache Mods Enabled Successfully" "Apache Mods Enabling Failed"
+# Restart Apache
+echo -e "\e[32mRestarting Apache\e[0m"
+sudo systemctl restart apache2
+check_last_command_execution "Apache Restarted Successfully" "Apache Restarting Failed"
+}
+function create_virtual_host {
+domain_name=$1
+# Define the variables
+document_root=$2
+# Create the document root directory
+mkdir -p "$document_root"
+virtual_host_file="/etc/apache2/sites-available/$domain_name.conf"
+sudo truncate -s 0 "$virtual_host_file"
+cat << EOF > "$virtual_host_file"
+<VirtualHost *:80>
+    ServerName $domain_name
+    DocumentRoot $document_root/public/
+    <Directory $document_root/public/>
+        Options Indexes FollowSymLinks
+        AllowOverride All
+        Require all granted
+    </Directory>
+    ErrorLog \${APACHE_LOG_DIR}/error.log
+    CustomLog \${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>
+EOF
+a2ensite "$domain_name.conf" # enable virtual host
+systemctl restart apache2 # restart apache
+check_last_command_execution "Virtual host for $domain_name created successfully!" "Failed to create virtual host for $domain_name"
+}
+# Function to install SSL using certbot
+function installSSL {
+domain_name=$1
+isSubdomain=$2
+echo "Installing Certbot first."
+sudo apt-get install certbot python3-certbot-apache -y
+check_last_command_execution "Certbot Installed Successfully" "Failed Certbot Installation"
+sudo a2enmod ssl
+sudo systemctl restart apache2
+if [ "$isSubdomain" = true ] ; then
+sudo certbot --apache -d $domain_name --register-unsafely-without-email --agree-tos -n
+else
+sudo certbot --apache -d $domain_name -d www.$domain_name --register-unsafely-without-email --agree-tos -n 
+fi
+if [ $? -eq 0 ]; then
+echo -e "\e[32mSSL Installed Successfully\e[0m"
+app_url="https://$domain_name"
+else
+echo -e "\e[31mSSL Installation Failed\e[0m"
+app_url="http://$domain_name"
+fi
+echo "SET - APP Url is: $app_url"
+}
+function add_ssh_known_hosts {
+# "Adding bitbucket.org to known hosts"
+echo "Adding bitbucket.org to known hosts"
+# create known_hosts file
+sudo truncate -s 0 ~/.ssh/known_hosts
+ssh-keygen -R bitbucket.org && curl https://bitbucket.org/site/ssh >> ~/.ssh/known_hosts && chmod 600 ~/.ssh/known_hosts && chmod 700 ~/.ssh
+check_last_command_execution "bitbucket.org added to known hosts" "Failed to add bitbucket.org to known hosts"
+}
+## Function to clean installation directories first
+function clean_installation_directories {
+echo "Cleaning Installation Directories"
+document_root=$1
+rm -rf $document_root/*  2> /dev/null # remove files
+rm -rf $document_root/.* 2> /dev/null # remove hidden files
+}
 # function to install mysql with default password
 function install_mysql_with_defined_password {
 # Install MySQL with default password
@@ -315,6 +393,11 @@ install_mysql_with_defined_password $mysql_root_pass
 create_database_and_database_user $mysql_root_pass
 mysql -u $database_user -p$database_user_password -e "show databases;" 2> /dev/null
 check_last_command_execution " MySQL Connection is Fine. Green Flag to create .env file" "MySQL Connection Failed.Exit the script"
+create_virtual_host $domain_name $document_root
+if [ "$sslInstallation" = true ] ; then
+installSSL $domain_name $isSubdomain
+fi 
+clean_installation_directories $document_root # call function to clean installation directories
 clone_from_git $git_branch $document_root # call function to clone from git
 create_db_file $document_root $database_name $database_user $database_user_password
 edit_config_js $document_root $app_url
