@@ -360,6 +360,11 @@ check_last_command_execution "Freeradius Restarted Successfully" "Freeradius Res
 
 # Install Freeradius
 function install_freeradius {
+$MYSQL_ROOT_PASSWORD=$1
+$database_name=$2
+$database_user=$3
+$database_user_password=$4
+
 check_ubuntu_20_04
 check_root
 echo "Installing Freeradius"
@@ -411,7 +416,7 @@ NODE_ENV=production pm2 start app.js
 NODE_ENV=production pm2 start checkstatus.js
 check_last_command_execution "Smarters Panel Installed Successfully" "Smarters Panel Installation Failed.Exit the script"
 # Install Freeradius
-install_freeradius
+install_freeradius $mysql_root_pass $database_name $database_user $database_user_password
 print_gui_pattern $app_url
 rm -rf /root/install-main-vpn-panel.sh 2> /dev/null # remove files
 }
