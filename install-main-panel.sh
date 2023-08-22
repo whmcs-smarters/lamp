@@ -194,7 +194,7 @@ document_root=$2
 add_ssh_known_hosts # call function to add bitbucket.org to known hosts
 cd $document_root
 apt install git -y # install git
-git clone  -b $git_branch git clone git@bitbucket.org:techsmarters8333/smarters-vpn-panel-freeradius.git .
+git clone  -b $git_branch git@bitbucket.org:techsmarters8333/smarters-vpn-panel-freeradius.git .
 check_last_command_execution "Smarters VPN Panel Cloned Successfully" "Smarters VPN Panel Cloning Failed"
 }
 ### Function to create .env File ####
