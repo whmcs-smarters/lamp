@@ -45,8 +45,8 @@ echo -e "\e[32m$1\e[0m"
 else
 echo -e "\e[31m$2\e[0m"
 # remove files
-rm -rf /root/install-main-vpn-panel.sh 2> /dev/null # remove files
-echo "Check Logs for more details: install-main-vpn-panel-$domain_name.log"
+rm -rf /root/install-main-panel.sh 2> /dev/null # remove files
+echo "Check Logs for more details: install-main-panel-$domain_name.log"
 exit 1
 fi
 }
@@ -420,7 +420,7 @@ check_last_command_execution "Smarters Panel Installed Successfully" "Smarters P
 # Install Freeradius
 install_freeradius $mysql_root_pass $database_name $database_user $database_user_password
 print_gui_pattern $app_url
-rm -rf /root/install-main-vpn-panel.sh 2> /dev/null # remove files
+rm -rf /root/install-main-panel.sh 2> /dev/null # remove files
 }
 # Function to update the Smarters Panel on Commit
 function update_smarters_panel {
@@ -463,8 +463,8 @@ fi
 echo "###### Options Provided by User ######"
 set_check_valid_domain_name $domain_name 
 # Start logging the script
-echo -e "\033[33mLogging the script into install-main-vpn-panel-$domain_name.log\e[0m"
-exec > >(tee -i install-main-vpn-panel-$domain_name.log)
+echo -e "\033[33mLogging the script into install-main-panel-$domain_name.log\e[0m"
+exec > >(tee -i install-main-panel-$domain_name.log)
 exec 2>&1
 # if git_branch is empty then set it to master
 if [ -z "$git_branch" ]
