@@ -412,6 +412,8 @@ npm install
 check_last_command_execution "NPM Installed Successfully" "NPM Installation Failed.Exit the script"
 cd $document_root
 sudo npm install -g pm2
+# check if pm2 is installed or not and run the app
+pm2 kill
 NODE_ENV=production pm2 start app.js
 NODE_ENV=production pm2 start checkstatus.js
 check_last_command_execution "Smarters Panel Installed Successfully" "Smarters Panel Installation Failed.Exit the script"
