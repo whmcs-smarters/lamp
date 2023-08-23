@@ -374,8 +374,7 @@ curl -s 'https://packages.networkradius.com/pgp/packages%40networkradius.com' | 
     sudo tee /etc/apt/keyrings/packages.networkradius.com.asc > /dev/null
     echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/packages.networkradius.com.asc] http://packages.networkradius.com/freeradius-3.2/ubuntu/focal focal main" | \
     sudo tee /etc/apt/sources.list.d/networkradius.list > /dev/null
-    apt-get update -y &&
-    apt-get install -y freeradius freeradius-mysql
+    apt-get update -y && apt-get install -y freeradius freeradius-mysql
     check_last_command_execution "Freeradius Installed Successfully" "Freeradius Installation Failed"
     # Configure Freeradius
 	configure_mysql_freeradius $MYSQL_ROOT_PASSWORD $database_name $database_user $database_user_password
@@ -398,6 +397,7 @@ install_mysql_with_defined_password $mysql_root_pass
 create_database_and_database_user $mysql_root_pass
 mysql -u $database_user -p$database_user_password -e "show databases;" 2> /dev/null
 check_last_command_execution " MySQL Connection is Fine. Green Flag to create .env file" "MySQL Connection Failed.Exit the script"
+install_apache # call function to install apache
 create_virtual_host $domain_name $document_root
 if [ "$sslInstallation" = true ] ; then
 installSSL $domain_name $isSubdomain
