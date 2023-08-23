@@ -433,7 +433,9 @@ chown -R $USER:$USER $document_root # change ownership to current user for clonn
 git stash
 git pull origin $git_branch
 check_last_command_execution "Smarters Panel Updated Successfully" "Smarters Panel Update Failed.Exit the script"
-pm2 restart all
+pm2 kill
+NODE_ENV=production pm2 start app.js
+NODE_ENV=production pm2 start checkstatus.js
 }
 ################### Start Script ##################
 echo -e "\e[1;43mWelcome to Smarters VPN Panel Installation with LAMP\e[0m"
