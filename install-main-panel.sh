@@ -29,7 +29,7 @@ echo -e "\033[33mDomain Name not provided So, We are using IP Address \033[0m"
 ip_address=$(curl -s http://checkip.amazonaws.com)
 domain_name=$ip_address
 sslInstallation=false
-app_url="http://$domain_name"
+app_url="http://$domain_name:3000" # would be http:<ip-address>:3000
 else
 echo -e "\033[33mDomain Name is provided\033[0m"
 check_domain_or_subdomain $1
@@ -206,11 +206,10 @@ database_user=$3
 database_user_password=$4
 sudo truncate -s 0 $document_root/db.js
 cat >> $document_root/db.js <<EOF
-DB_PASSWORD=$database_user_password
-exports.dbname = $database_name;
-exports.dbhost = 127.0.0.1';
-exports.dbuser = $database_user;
-exports.dbpassword = $database_user_password;
+exports.dbname = "$database_name";
+exports.dbhost = "127.0.0.1";
+exports.dbuser = "$database_user";
+exports.dbpassword = "$database_user_password";
 EOF
 }
 ### Function to create config.js File ####
@@ -399,8 +398,11 @@ mysql -u $database_user -p$database_user_password -e "show databases;" 2> /dev/n
 check_last_command_execution " MySQL Connection is Fine. Green Flag to create .env file" "MySQL Connection Failed.Exit the script"
 install_apache # call function to install apache
 create_virtual_host $domain_name $document_root
-if [ "$sslInstallation" = true ] ; then
+if [ "$sslInstallation" == true ] ; then
 installSSL $domain_name $isSubdomain
+app_url="https://$domain_name"
+else
+app_url="http://$domain_name:3000"
 fi 
 clean_installation_directories $document_root # call function to clean installation directories
 clone_from_git $git_branch $document_root # call function to clone from git
