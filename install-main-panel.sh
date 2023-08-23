@@ -273,10 +273,10 @@ function check_root {
 
 # function to import freeradius mysql and configure it
 function configure_mysql_freeradius {
-$MYSQL_ROOT_PASSWORD=$1
-$database_name=$2
-$database_user=$3
-$database_user_password=$4
+MYSQL_ROOT_PASSWORD=$1
+database_name=$2
+database_user=$3
+database_user_password=$4
 
 # Import the freeradius mysql schema
 mysql -u root -p$MYSQL_ROOT_PASSWORD $database_name < /etc/freeradius/mods-config/sql/main/mysql/schema.sql
@@ -360,10 +360,10 @@ check_last_command_execution "Freeradius Restarted Successfully" "Freeradius Res
 
 # Install Freeradius
 function install_freeradius {
-$MYSQL_ROOT_PASSWORD=$1
-$database_name=$2
-$database_user=$3
-$database_user_password=$4
+MYSQL_ROOT_PASSWORD=$1
+database_name=$2
+database_user=$3
+database_user_password=$4
 
 check_ubuntu_20_04
 check_root
