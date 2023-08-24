@@ -96,6 +96,7 @@ ProxyPassReverse / http://localhost:3000/
 </VirtualHost>
 EOF
 a2ensite "$domain_name.conf" # enable virtual host
+a2dissite 000-default.conf # disable default virtual host
 systemctl restart apache2 # restart apache
 check_last_command_execution "Virtual host for $domain_name created successfully!" "Failed to create virtual host for $domain_name"
 }
