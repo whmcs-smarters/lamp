@@ -402,6 +402,8 @@ document_root=$2
 git_branch=$3
 mysql_root_pass=$4
 isSubdomain=$5
+apt-get update -y # update ubuntu
+check_last_command_execution "Ubuntu Updated Successfully" "Ubuntu Update Failed.Exit the script"
 install_mysql_with_defined_password $mysql_root_pass
 create_database_and_database_user $mysql_root_pass
 mysql -u $database_user -p$database_user_password -e "show databases;" 2> /dev/null
