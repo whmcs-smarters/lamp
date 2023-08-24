@@ -397,6 +397,32 @@ else
 echo -e "\e[31mNPM is not installed\e[0m"
 fi
 }
+# Function to show the Mesasge to users that we are upgrading the system. 
+function show_user_message {
+document_root=$1
+type=$2
+echo -e "\e[32mWe are upgrading the system. Please wait for a while.\e[0m"
+touch $document_root/public/index.html
+cat << EOF > "$document_root/public/index.html"
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Smarters Panel</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body {
+font-family: Arial, Helvetica, sans-serif;
+}
+</style>
+</head>
+<body>
+<h1>Smarters Panel</h1>
+<p>We are $type the system. Please wait for a while.</p>
+</body>
+</html>
+EOF
+}
 ########### FUNCTION to Install Smarters Panel ###########
 function install_smarters_panel {
 domain_name=$1
@@ -405,6 +431,8 @@ git_branch=$3
 mysql_root_pass=$4
 isSubdomain=$5
 desired_version="8.1" # desired version of PHP
+# show message to user that we are installing the Smarters Panel
+show_user_message $document_root "installing"
 apt update -yq
 install_apache
 install_mysql_with_defined_password $mysql_root_pass
@@ -447,12 +475,16 @@ give_permissions_to_laravel_directories $document_root
 print_gui_pattern $app_url
 rm -rf /root/server-setup.sh 2> /dev/null # remove files
 }
+
+
 # Function to update the Smarters Panel on Commit
 function update_smarters_panel {
 echo "Updating the Smarters Panel on Commit"
 document_root=$1
 git_branch=$2
 cd $document_root
+# create index.html file to show the message to users that we are upgrading the system
+show_user_message $document_root "updating"
 chown -R $USER:$USER $document_root # change ownership to current user for clonning
 # rm -rf smarterpanel-base
 git stash
@@ -468,6 +500,11 @@ php artisan optimize:clear
 check_last_command_execution "Artisan Optimize Successfully" "Artisan Optimize Failed.Exit the script"
 # give permissions to laravel directories
 give_permissions_to_laravel_directories $document_root
+# remove index.html file
+rm -rf $document_root/public/index.html
+# print the GUI pattern
+print_gui_pattern $app_url
+
 }
 ################### Start Script ##################
 echo -e "\e[1;43mWelcome to Smarters Panel Installation with LAMP\e[0m"
