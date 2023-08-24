@@ -35,7 +35,7 @@ echo -e "\033[33mDomain Name is provided\033[0m"
 check_domain_or_subdomain $1
 domain_name=$1
 sslInstallation=true
-app_url="http://$domain_name"
+app_url="http://$domain_name:3000"
 fi
 }
 # function to check if last command executed successfully or not with message
