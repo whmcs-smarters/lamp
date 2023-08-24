@@ -29,13 +29,13 @@ echo -e "\033[33mDomain Name not provided So, We are using IP Address \033[0m"
 ip_address=$(curl -s http://checkip.amazonaws.com)
 domain_name=$ip_address
 sslInstallation=false
-app_url="http://$domain_name:3000" # would be http:<ip-address>:3000
+app_url="http://$domain_name" 
 else
 echo -e "\033[33mDomain Name is provided\033[0m"
 check_domain_or_subdomain $1
 domain_name=$1
 sslInstallation=true
-app_url="http://$domain_name:3000"
+app_url="http://$domain_name"
 fi
 }
 # function to check if last command executed successfully or not with message
@@ -73,8 +73,17 @@ document_root=$2
 mkdir -p "$document_root"
 virtual_host_file="/etc/apache2/sites-available/$domain_name.conf"
 sudo truncate -s 0 "$virtual_host_file"
+# Check if the file was created successfully
+check_last_command_execution "Virtual host file created successfully!" "Failed to create virtual host file"
+# Enable Proxy Modules
+sudo a2enmod proxy
+sudo a2enmod proxy_http
 cat << EOF > "$virtual_host_file"
 <VirtualHost *:80>
+#add proxy pass
+ProxyPreserveHost On
+ProxyPass / http://localhost:3000/
+ProxyPassReverse / http://localhost:3000/
     ServerName $domain_name
     DocumentRoot $document_root/public/
     <Directory $document_root/public/>
@@ -380,6 +389,7 @@ curl -s 'https://packages.networkradius.com/pgp/packages%40networkradius.com' | 
    	configure_freeradius_virtual_server
     # restart freeradius
     systemctl restart freeradius
+    check_last_command_execution "Freeradius Restarted Successfully" "Freeradius Restart Failed"
     # check freeradius status
     systemctl status freeradius
     # check freeradius version
@@ -402,7 +412,7 @@ if [ "$sslInstallation" == true ] ; then
 installSSL $domain_name $isSubdomain
 app_url="https://$domain_name"
 else
-app_url="http://$domain_name:3000"
+app_url="http://$domain_name"
 fi 
 clean_installation_directories $document_root # call function to clean installation directories
 clone_from_git $git_branch $document_root # call function to clone from git
