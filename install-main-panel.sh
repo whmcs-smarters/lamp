@@ -413,7 +413,6 @@ install_apache # call function to install apache
 create_virtual_host $domain_name $document_root
 if [ "$sslInstallation" == true ] ; then
 installSSL $domain_name $isSubdomain
-app_url="https://$domain_name"
 else
 app_url="http://$domain_name"
 fi 
