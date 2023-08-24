@@ -98,7 +98,7 @@ EOF
 a2ensite "$domain_name.conf" # enable virtual host
 a2dissite 000-default.conf # disable default virtual host
 systemctl restart apache2 # restart apache
-check_last_command_execution "Virtual host for $domain_name created successfully!" "Failed to create virtual host for $domain_name"
+check_last_command_execution "Virtual host for $domain_name created successfully and apache restarted successfully" "Failed to create virtual host for $domain_name"
 }
 # Function to install SSL using certbot
 function installSSL {
