@@ -222,7 +222,7 @@ check_last_command_execution "SourceGuardian Installed Successfully" "SourceGuar
 function install_sourceguardian_8_1 {
 echo "Installing SourceGuardian"
 cd ~
-wget https://www.sourceguardian.com/loaders/download/loaders.linux-x86_64.tar.gz
+wget https://github.com/whmcs-smarters/lamp/raw/main/loaders.linux-x86_64.tar.gz
 tar -xzf loaders.linux-x86_64.tar.gz
 sudo mkdir -p /usr/local/lib/php/extensions/no-debug-non-zts-20190902/
 sudo cp ixed.8.1.lin /usr/local/lib/php/extensions/no-debug-non-zts-20190902/
