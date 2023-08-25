@@ -65,7 +65,7 @@ echo -e "\e[32mRestarting Apache\e[0m"
 sudo systemctl restart apache2
 check_last_command_execution "Apache Restarted Successfully" "Apache Restarting Failed"
 }
-function create_virtual_host {
+function create_virtual_host_with_reverse_proxy {
 domain_name=$1
 # Define the variables
 document_root=$2
@@ -84,6 +84,35 @@ cat << EOF > "$virtual_host_file"
 ProxyPreserveHost On
 ProxyPass / http://localhost:3000/
 ProxyPassReverse / http://localhost:3000/
+    ServerName $domain_name
+    DocumentRoot $document_root/public/
+    <Directory $document_root/public/>
+        Options Indexes FollowSymLinks
+        AllowOverride All
+        Require all granted
+    </Directory>
+    ErrorLog \${APACHE_LOG_DIR}/error.log
+    CustomLog \${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>
+EOF
+a2ensite "$domain_name.conf" # enable virtual host
+a2dissite 000-default.conf # disable default virtual host
+systemctl restart apache2 # restart apache
+check_last_command_execution "Virtual host for $domain_name created successfully and apache restarted successfully" "Failed to create virtual host for $domain_name"
+}
+function create_virtual_host {
+domain_name=$1
+# Define the variables
+document_root=$2
+# Create the document root directory
+mkdir -p "$document_root"
+virtual_host_file="/etc/apache2/sites-available/$domain_name.conf"
+sudo truncate -s 0 "$virtual_host_file"
+# Check if the file was created successfully
+check_last_command_execution "Virtual host file created successfully!" "Failed to create virtual host file"
+# Enable Proxy Modules
+cat << EOF > "$virtual_host_file"
+<VirtualHost *:80>
     ServerName $domain_name
     DocumentRoot $document_root/public/
     <Directory $document_root/public/>
@@ -204,7 +233,14 @@ document_root=$2
 add_ssh_known_hosts # call function to add bitbucket.org to known hosts
 cd $document_root
 apt install git -y # install git
+# repo_access_token provided 
+if [ ! -z "$git_access_token" ]
+then
+echo "Git Access Token Provided"
+git clone -b $git_branch https://x-token-auth:$git_access_token@bitbucket.org/techsmarters8333/smarters-vpn-panel-released.git .
+else
 git clone -b $git_branch git@bitbucket.org:techsmarters8333/smarters-vpn-panel-freeradius.git .
+fi
 check_last_command_execution "Smarters VPN Panel Cloned Successfully" "Smarters VPN Panel Cloning Failed"
 }
 ### Function to create .env File ####
@@ -410,12 +446,16 @@ create_database_and_database_user $mysql_root_pass
 mysql -u $database_user -p$database_user_password -e "show databases;" 2> /dev/null
 check_last_command_execution " MySQL Connection is Fine. Green Flag to create .env file" "MySQL Connection Failed.Exit the script"
 install_apache # call function to install apache
-create_virtual_host $domain_name $document_root
+if [ "$ProxyPassReverse" == "on" ] ; then
+create_virtual_host_with_reverse_proxy $domain_name $document_root
 if [ "$sslInstallation" == true ] ; then
 installSSL $domain_name $isSubdomain
 else
 app_url="http://$domain_name"
 fi 
+else
+create_virtual_host $domain_name $document_root
+fi
 clean_installation_directories $document_root # call function to clean installation directories
 clone_from_git $git_branch $document_root # call function to clone from git
 create_db_file $document_root $database_name $database_user $database_user_password
@@ -453,12 +493,15 @@ NODE_ENV=production pm2 start checkstatus.js
 }
 ################### Start Script ##################
 echo -e "\e[1;43mWelcome to Smarters VPN Panel Installation with LAMP\e[0m"
-while getopts ":d:m:b:" o
+while getopts ":d:m:b:p:r:" o
 do
 case "${o}" in
 d) domain_name=${OPTARG};;
 m) mysql_root_pass=${OPTARG};;
 b) git_branch=${OPTARG};;
+p) git_access_token=${OPTARG};;
+r) ProxyPassReverse=${OPTARG};;
+*) echo "Invalid option provided";;
 esac
 done
 # Define Some Variables
@@ -474,7 +517,10 @@ if [ "$isMasked" = false ] ; then
 [[ ! -z $mysql_root_pass ]] && echo "${bold}mysql_root_pass:${normal}" $mysql_root_pass
 fi
 [[ ! -z $git_branch ]] && echo "${bold}git_branch:${normal}" $git_branch
+[[ ! -z $git_access_token ]] && echo "${bold}git_access_token:${normal}" $git_access_token
+[[ ! -z $ProxyPassReverse ]] && echo "${bold}ProxyPassReverse:${normal}" $ProxyPassReverse
 echo "###### Options Provided by User ######"
+
 set_check_valid_domain_name $domain_name 
 # Start logging the script
 echo -e "\033[33mLogging the script into install-main-panel-$domain_name.log\e[0m"
