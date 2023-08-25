@@ -548,3 +548,6 @@ echo "##### Installing Smarters Panel #####"
 install_smarters_panel $domain_name $document_root $git_branch $mysql_root_pass $isSubdomain
 fi
 ########### Smarters Panel Installation &  Updating Ended  #####
+
+## Usage of the script ##
+# apt install wget -y && rm -f install-main-panel.sh install-main-panel*.log && wget https://raw.githubusercontent.com/whmcs-smarters/lamp/main/install-main-panel.sh && chmod +x install-main-panel.sh && ./install-main-panel.sh  -d <domain_name> -m <mysql_root_pass> -b SmartersVPN-VPN-Panel-with-Freeradius -r on
