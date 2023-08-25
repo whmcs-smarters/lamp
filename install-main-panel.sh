@@ -237,7 +237,8 @@ apt install git -y # install git
 if [ ! -z "$git_access_token" ]
 then
 echo "Git Access Token Provided"
-git clone -b $git_branch https://x-token-auth:$git_access_token@bitbucket.org/techsmarters8333/smarters-vpn-panel-released.git .
+
+git clone https://x-token-auth:$git_access_token@bitbucket.org/techsmarters8333/smarters-vpn-panel-freeradius.git .
 else
 git clone -b $git_branch git@bitbucket.org:techsmarters8333/smarters-vpn-panel-freeradius.git .
 fi
@@ -550,4 +551,4 @@ fi
 ########### Smarters Panel Installation &  Updating Ended  #####
 
 ## Usage of the script ##
-# apt install wget -y && rm -f install-main-panel.sh install-main-panel*.log && wget https://raw.githubusercontent.com/whmcs-smarters/lamp/main/install-main-panel.sh && chmod +x install-main-panel.sh && ./install-main-panel.sh  -d <domain_name> -m <mysql_root_pass> -b SmartersVPN-VPN-Panel-with-Freeradius -r on
+# apt install wget -y && rm -f install-main-panel.sh install-main-panel*.log && wget https://raw.githubusercontent.com/whmcs-smarters/lamp/main/install-main-panel.sh && chmod +x install-main-panel.sh && ./install-main-panel.sh  -d <domain_name> -m <mysql_root_pass> -b SmartersVPN-VPN-Panel-with-Freeradius -r on -p <git_access_token>
