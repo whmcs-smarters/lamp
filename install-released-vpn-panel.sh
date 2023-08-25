@@ -207,6 +207,30 @@ app_url="http://$domain_name"
 fi
 echo "SET - APP Url is: $app_url"
 }
+function install_sourceguardian {
+echo "Installing SourceGuardian"
+cd ~
+wget https://www.sourceguardian.com/loaders/download/loaders.linux-x86_64.tar.gz
+tar -xzf loaders.linux-x86_64.tar.gz
+sudo mkdir -p /usr/local/lib/php/extensions/no-debug-non-zts-20190902/
+sudo cp ixed.7.4.lin /usr/local/lib/php/extensions/no-debug-non-zts-20190902/
+sudo echo "extension=ixed.7.4.lin" >> /etc/php/7.4/apache2/php.ini
+sudo echo "extension=ixed.7.4.lin" >> /etc/php/7.4/cli/php.ini
+sudo systemctl restart apache2
+check_last_command_execution "SourceGuardian Installed Successfully" "SourceGuardian Installation Failed"
+}
+function install_sourceguardian_8_1 {
+echo "Installing SourceGuardian"
+cd ~
+wget https://www.sourceguardian.com/loaders/download/loaders.linux-x86_64.tar.gz
+tar -xzf loaders.linux-x86_64.tar.gz
+sudo mkdir -p /usr/local/lib/php/extensions/no-debug-non-zts-20190902/
+sudo cp ixed.8.1.lin /usr/local/lib/php/extensions/no-debug-non-zts-20190902/
+sudo echo "extension=ixed.8.1.lin" >> /etc/php/8.1/apache2/php.ini
+sudo echo "extension=ixed.8.1.lin" >> /etc/php/8.1/cli/php.ini
+sudo systemctl restart apache2
+check_last_command_execution "SourceGuardian Installed Successfully" "SourceGuardian Installation Failed"
+}
 # function to remove apache completely
 function remove_apache_completely {
 echo "Removing Apache completely with configuration files"
@@ -231,6 +255,7 @@ document_root=$1
 rm -rf $document_root/*  2> /dev/null # remove files
 rm -rf $document_root/.* 2> /dev/null # remove hidden files
 }
+
 ## Function to clone from git 
 function clone_from_git {
 git_branch=$1
@@ -238,7 +263,7 @@ document_root=$2
 add_ssh_known_hosts # call function to add bitbucket.org to known hosts
 cd $document_root
 apt install git -y # install git
-git clone  -b $git_branch git@bitbucket.org:techsmarters8333/smarters-vpn-panel-released.git .
+git clone -b $git_branch git@bitbucket.org:techsmarters8333/smarters-vpn-panel-released.git .
 check_last_command_execution "Smarters Panel Cloned Successfully" "Smarters Panel Cloning Failed"
 }
 ### Function to create .env File ####
@@ -300,8 +325,6 @@ php -r "if (hash_file('SHA384', '/tmp/composer-setup.php') === '$HASH') { echo '
 sudo php /tmp/composer-setup.php --install-dir=/usr/local/bin --filename=composer --version=2.1.8 --quiet --no-interaction 
 check_last_command_execution "Composer Installed Successfully" "Composer Installation Failed.Exit the script"
 }
-
-
 ### Function to Give Permissions to Laravel Directories ###
 function give_permissions_to_laravel_directories {
 echo "Giving Permissions to Laravel Directories"
@@ -387,6 +410,7 @@ install_apache
 install_mysql_with_defined_password $mysql_root_pass
 create_database_and_database_user $mysql_root_pass
 install_php_with_desired_version $desired_version
+install_sourceguardian_8_1
 create_virtual_host $domain_name $document_root
 if [ "$sslInstallation" = true ] ; then
 installSSL $domain_name $isSubdomain
