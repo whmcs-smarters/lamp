@@ -410,9 +410,6 @@ MYSQL_ROOT_PASSWORD=$1
 database_name=$2
 database_user=$3
 database_user_password=$4
-
-check_ubuntu_20_04
-check_root
 echo "Installing Freeradius"
 apt-get update -y && apt-get install -y gnupg2 curl
 install -d -o root -g root -m 0755 /etc/apt/keyrings
@@ -435,6 +432,8 @@ curl -s 'https://packages.networkradius.com/pgp/packages%40networkradius.com' | 
 }
 ########### FUNCTION to Install Smarters Panel ###########
 function install_smarters_panel {
+check_ubuntu_20_04
+check_root
 domain_name=$1
 document_root=$2
 git_branch=$3
