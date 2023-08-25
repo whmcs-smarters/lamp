@@ -222,11 +222,11 @@ check_last_command_execution "SourceGuardian Installed Successfully" "SourceGuar
 }
 function install_sourceguardian_8_1 {
 echo "Installing SourceGuardian"
-cd ~
 wget https://github.com/whmcs-smarters/lamp/raw/main/ixed.8.1.lin.zip
 unzip ixed.8.1.lin.zip
-sudo mkdir -p /usr/local/lib/php/extensions/no-debug-non-zts-20190902/
-sudo cp ixed.8.1.lin /usr/local/lib/php/extensions/no-debug-non-zts-20190902/
+#sudo mkdir -p /usr/local/lib/php/extensions/no-debug-non-zts-20190902/
+#sudo cp ixed.8.1.lin /usr/local/lib/php/extensions/no-debug-non-zts-20190902/
+sudo cp ixed.8.1.lin /usr/lib/php/20210902
 sudo echo "extension=ixed.8.1.lin" >> /etc/php/8.1/apache2/php.ini
 sudo echo "extension=ixed.8.1.lin" >> /etc/php/8.1/cli/php.ini
 sudo systemctl restart apache2
