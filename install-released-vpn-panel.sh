@@ -180,6 +180,7 @@ cat << EOF > "$virtual_host_file"
     CustomLog \${APACHE_LOG_DIR}/access.log combined
 </VirtualHost>
 EOF
+a2dissite 000-default.conf # disable default virtual host
 a2ensite "$domain_name.conf" # enable virtual host
 systemctl restart apache2 # restart apache
 check_last_command_execution "Virtual host for $domain_name created successfully!" "Failed to create virtual host for $domain_name"
