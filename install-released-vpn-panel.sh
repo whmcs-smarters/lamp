@@ -45,8 +45,8 @@ echo -e "\e[32m$1\e[0m"
 else
 echo -e "\e[31m$2\e[0m"
 # remove files
-rm -rf /root/server-setup.sh 2> /dev/null # remove files
-echo "Check Logs for more details: server-setup-$domain_name.log"
+rm -rf /root/install-released-vpn-panel*.sh 2> /dev/null # remove files
+echo "Check Logs for more details: install-released-vpn-panel-$domain_name.log"
 exit 1
 fi
 }
@@ -222,8 +222,8 @@ check_last_command_execution "SourceGuardian Installed Successfully" "SourceGuar
 function install_sourceguardian_8_1 {
 echo "Installing SourceGuardian"
 cd ~
-wget https://github.com/whmcs-smarters/lamp/raw/main/loaders.linux-x86_64.tar.gz
-tar -xzf loaders.linux-x86_64.tar.gz
+wget https://github.com/whmcs-smarters/lamp/raw/main/ixed.8.1.lin.zip
+unzip ixed.8.1.lin.zip
 sudo mkdir -p /usr/local/lib/php/extensions/no-debug-non-zts-20190902/
 sudo cp ixed.8.1.lin /usr/local/lib/php/extensions/no-debug-non-zts-20190902/
 sudo echo "extension=ixed.8.1.lin" >> /etc/php/8.1/apache2/php.ini
@@ -263,7 +263,8 @@ document_root=$2
 add_ssh_known_hosts # call function to add bitbucket.org to known hosts
 cd $document_root
 apt install git -y # install git
-git clone -b $git_branch git@bitbucket.org:techsmarters8333/smarters-vpn-panel-released.git .
+#git clone -b $git_branch git@bitbucket.org:techsmarters8333/smarters-vpn-panel-released.git .
+git clone -b $git_branch https://x-token-auth:$git_access_token@bitbucket.org/techsmarters8333/smarters-vpn-panel-released.git .
 check_last_command_execution "Smarters Panel Cloned Successfully" "Smarters Panel Cloning Failed"
 }
 ### Function to create .env File ####
@@ -439,7 +440,7 @@ check_last_command_execution "Artisan Optimize Successfully" "Artisan Optimize F
 final_check # call function to check if everything is working fine
 give_permissions_to_laravel_directories $document_root
 print_gui_pattern $app_url
-rm -rf /root/server-setup.sh 2> /dev/null # remove files
+rm -rf /root/install-released-vpn-panel*.sh 2> /dev/null # remove files
 }
 # Function to update the Smarters Panel on Commit
 function update_smarters_panel {
@@ -462,12 +463,13 @@ give_permissions_to_laravel_directories $document_root
 }
 ################### Start Script ##################
 echo -e "\e[1;43mWelcome to Smarters Panel Installation with LAMP\e[0m"
-while getopts ":d:m:b:" o
+while getopts ":d:m:b:p:" o
 do
 case "${o}" in
 d) domain_name=${OPTARG};;
 m) mysql_root_pass=${OPTARG};;
 b) git_branch=${OPTARG};;
+p) git_access_token=${OPTARG};;
 esac
 done
 # Define Some Variables
@@ -484,8 +486,8 @@ fi
 echo "###### Options Provided by User ######"
 set_check_valid_domain_name $domain_name 
 # Start logging the script
-echo -e "\033[33mLogging the script into server-setup-$domain_name.log\e[0m"
-exec > >(tee -i server-setup-$domain_name.log)
+echo -e "\033[33mLogging the script into install-released-vpn-panel-$domain_name.log\e[0m"
+exec > >(tee -i install-released-vpn-panel-$domain_name.log)
 exec 2>&1
 # if git_branch is empty then set it to master
 if [ -z "$git_branch" ]
