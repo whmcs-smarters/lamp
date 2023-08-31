@@ -457,6 +457,9 @@ else
 create_virtual_host $domain_name $document_root
 fi
 clean_installation_directories $document_root # call function to clean installation directories
+# Install Freeradius
+install_freeradius $mysql_root_pass $database_name $database_user $database_user_password
+# Start Installation of Smarters VPN Panel Interface
 clone_from_git $git_branch $document_root # call function to clone from git
 create_db_file $document_root $database_name $database_user $database_user_password
 edit_config_js $document_root $app_url
@@ -471,8 +474,6 @@ pm2 kill
 NODE_ENV=production pm2 start app.js
 NODE_ENV=production pm2 start checkstatus.js
 check_last_command_execution "Smarters Panel Installed Successfully" "Smarters Panel Installation Failed.Exit the script"
-# Install Freeradius
-install_freeradius $mysql_root_pass $database_name $database_user $database_user_password
 print_gui_pattern $app_url
 rm -rf /root/install-main-panel.sh 2> /dev/null # remove files
 }
