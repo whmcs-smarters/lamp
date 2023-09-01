@@ -490,6 +490,8 @@ chown -R $USER:$USER $document_root # change ownership to current user for clonn
 git stash
 git pull origin $git_branch
 check_last_command_execution "Smarters Panel Updated Successfully" "Smarters Panel Update Failed.Exit the script"
+composer install --no-interaction
+check_last_command_execution "Composer Installed Successfully" "Composer Installation Failed.Exit the script"
 npm run prod
 #npm run dev
 check_last_command_execution "NPM Run Dev Successfully" "NPM Run Dev Failed.Exit the script"
