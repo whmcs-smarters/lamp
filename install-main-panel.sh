@@ -305,8 +305,10 @@ print_horizontal_line
 function check_ubuntu_20_04 {
     if [[ $(lsb_release -rs) == "20.04" ]]; then
         echo "OS Confirmed: Ubuntu 20.04"
+        elif [[ $(lsb_release -rs) == "22.04" ]]; then
+        echo "OS Confirmed: Ubuntu 22.04"
     else
-        echo "Ubuntu 20.04 is required to run this script"
+        echo "Ubuntu 20.04 or 22.04 is required to run this script"
         exit 1
     fi
 }
