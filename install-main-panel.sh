@@ -407,6 +407,36 @@ check_last_command_execution "Freeradius Restarted Successfully" "Freeradius Res
   }
 
 # Install Freeradius
+function install_freeradius_22_04 {
+MYSQL_ROOT_PASSWORD=$1
+database_name=$2
+database_user=$3
+database_user_password=$4
+echo "Installing Freeradius"
+install -d -o root -g root -m 0755 /etc/apt/keyrings
+curl -s 'https://packages.networkradius.com/pgp/packages%40networkradius.com' | \
+    sudo tee /etc/apt/keyrings/packages.networkradius.com.asc > /dev/null
+    printf 'Package: /freeradius/\nPin: origin "packages.networkradius.com"\nPin-Priority: 999\n' | \
+    sudo tee /etc/apt/preferences.d/networkradius > /dev/null
+    echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/packages.networkradius.com.asc] http://packages.networkradius.com/freeradius-3.2/ubuntu/jammy jammy main" | \
+    sudo tee /etc/apt/sources.list.d/networkradius.list > /dev/null
+    sudo apt-get update -y
+    sudo apt-get install freeradius freeradius-mysql -y 
+    check_last_command_execution "Freeradius Installed Successfully" "Freeradius Installation Failed"
+    # Configure Freeradius
+    configure_mysql_freeradius $MYSQL_ROOT_PASSWORD $database_name $database_user $database_user_password
+   	configure_freeradius_virtual_server
+    # restart freeradius
+    systemctl restart freeradius
+    check_last_command_execution "Freeradius Restarted Successfully" "Freeradius Restart Failed"
+    # check freeradius status
+    systemctl status freeradius
+    # check freeradius version
+    freeradius -v | head -n 1
+    # start freeradius on boot
+    sudo systemctl enable --now freeradius
+
+}
 function install_freeradius {
 MYSQL_ROOT_PASSWORD=$1
 database_name=$2
@@ -431,6 +461,8 @@ curl -s 'https://packages.networkradius.com/pgp/packages%40networkradius.com' | 
     systemctl status freeradius
     # check freeradius version
     freeradius -v | head -n 1
+    # start freeradius on boot
+    sudo systemctl enable --now freeradius
 }
 ########### FUNCTION to Install Smarters Panel ###########
 function install_smarters_panel {
@@ -460,7 +492,11 @@ create_virtual_host $domain_name $document_root
 fi
 clean_installation_directories $document_root # call function to clean installation directories
 # Install Freeradius
+if [[ $(lsb_release -rs) == "22.04" ]]; then
+install_freeradius_22_04 $mysql_root_pass $database_name $database_user $database_user_password
+else
 install_freeradius $mysql_root_pass $database_name $database_user $database_user_password
+fi
 # Start Installation of Smarters VPN Panel Interface
 clone_from_git $git_branch $document_root # call function to clone from git
 create_db_file $document_root $database_name $database_user $database_user_password
