@@ -1,6 +1,6 @@
 #!/bin/bash
 # This script will update the Smarters Panel on your server.
-document_root="/var/www/billing.smartersvpn.com"
+document_root="<give-path-here>"
 chown -R root:root $document_root
 cd $document_root
 git stash
