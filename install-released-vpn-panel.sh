@@ -335,12 +335,9 @@ document_root=$1
 sudo chown -R www-data:www-data $document_root
 sudo chmod -R 755 $document_root
 # primission to laravel storage
-sudo chmod -R 777 $document_root/storage
+sudo chmod -R 777 $document_root/storage/*
 # primission to laravel bootstrap
-sudo chmod -R 777 $document_root/bootstrap
-# primission to laravel cache
-sudo chmod -R 777 $document_root/bootstrap/cache
-sudo chmod -R 777 $document_root/storage/logs/
+sudo chmod -R 777 $document_root/bootstrap/*
 # Restart Apache
 sudo systemctl restart apache2
 }
