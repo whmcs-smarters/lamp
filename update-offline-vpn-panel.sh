@@ -1,7 +1,6 @@
 #!/bin/bash
 # This script will update the Smarters Panel on your server.
 # $1 = Document root path
-# $1 is empty then it will take /var/www/html as document root
 document_root=$1
 if [ -z "$document_root" ]
 then
