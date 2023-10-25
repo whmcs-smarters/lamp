@@ -197,8 +197,11 @@ sudo systemctl restart apache2
 if [ "$isSubdomain" = true ] ; then
 sudo certbot --apache -d $domain_name --register-unsafely-without-email --agree-tos -n
 else
-sudo certbot --apache -d $domain_name -d www.$domain_name --register-unsafely-without-email --agree-tos -n 
+sudo certbot --apache -d $domain_name --register-unsafely-without-email --agree-tos -n
 fi
+#else
+#sudo certbot --apache -d $domain_name -d www.$domain_name --register-unsafely-without-email --agree-tos -n 
+#fi
 if [ $? -eq 0 ]; then
 echo -e "\e[32mSSL Installed Successfully\e[0m"
 app_url="https://$domain_name"
@@ -245,6 +248,14 @@ function add_ssh_known_hosts {
 # "Adding bitbucket.org to known hosts"
 echo "Adding bitbucket.org to known hosts"
 # create known_hosts file
+# check if known_hosts file exists or not
+if [ ! -f ~/.ssh/known_hosts ]; then
+sudo touch ~/.ssh/known_hosts
+fi
+# check if .ssh directory exists or not
+if [ ! -d ~/.ssh ]; then
+sudo mkdir ~/.ssh
+fi
 sudo truncate -s 0 ~/.ssh/known_hosts
 ssh-keygen -R bitbucket.org && curl https://bitbucket.org/site/ssh >> ~/.ssh/known_hosts && chmod 600 ~/.ssh/known_hosts && chmod 700 ~/.ssh
 check_last_command_execution "bitbucket.org added to known hosts" "Failed to add bitbucket.org to known hosts"
@@ -405,6 +416,8 @@ mysql_root_pass=$4
 isSubdomain=$5
 desired_version="8.1" # desired version of PHP
 apt update -yq
+# install curl and wget
+apt install curl wget -yq
 install_apache
 install_mysql_with_defined_password $mysql_root_pass
 create_database_and_database_user $mysql_root_pass
