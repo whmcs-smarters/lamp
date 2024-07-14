@@ -104,10 +104,10 @@ until [[ $php =~ (y|n) ]]; do
 read -rp "Do you want to install PHP 8.1 and its modules? [y/n]: " -e -i "n" php
 done
 else
-# Install PHP 8.1 and its modules ubuntu 22.04
-echo -e "\e[32mInstalling PHP 8.1 and its modules\e[0m"
+# Install PHP 8.3 and its modules Ubuntu 22.04 or 24.04
+echo -e "\e[32mInstalling PHP 8.3 and its modules\e[0m"
 until [[ $php =~ (y|n) ]]; do
-read -rp "Do you want to install PHP 8.1 and its modules? [y/n]: " -e -i "y" php
+read -rp "Do you want to install PHP 8.3 and its modules? [y/n]: " -e -i "y" php
 done
 if [[ $php == "y" ]]; then
 sudo apt-get install software-properties-common -y
