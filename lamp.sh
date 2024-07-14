@@ -113,9 +113,11 @@ if [[ $php == "y" ]]; then
 sudo apt-get install software-properties-common -y
 sudo add-apt-repository ppa:ondrej/php -y
 sudo apt-get update -y
-sudo apt-get install php8.1 -y
+sudo apt install php8.3 -y
+sudo apt install libapache2-mod-php php8.3-common php8.3-cli php8.3-mbstring php8.3-bcmath php8.3-fpm php8.3-mysql php8.3-zip php8.3-gd php8.3-curl php8.3-xml -y
+#sudo apt-get install php8.1 -y
 sudo apt install unzip
-sudo apt-get install php8.1-{bcmath,bz2,intl,gd,mbstring,mysql,zip,curl} -y
+#sudo apt-get install php8.1-{bcmath,bz2,intl,gd,mbstring,mysql,zip,curl} -y
 sudo apt-get install php libapache2-mod-php php-mysql -y
 # Restart Apache
 sudo systemctl restart apache2
